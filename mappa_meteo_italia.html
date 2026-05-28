@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_b500754f3db002007ac089d1e42261f5 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_b500754f3db002007ac089d1e42261f5" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_b500754f3db002007ac089d1e42261f5 = L.map(
+                "map_b500754f3db002007ac089d1e42261f5",
+                {
+                    center: [42.0, 12.5],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 6,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_cf6caf1ffabb21ce01a325e69cb5022c = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_cf6caf1ffabb21ce01a325e69cb5022c.addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+            var circle_a5699c5e4083e9facc6fdaf604e26761 = L.circle(
+                [45.07, 7.68],
+                {"bubblingMouseEvents": true, "color": "#0066ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0066ff", "fillOpacity": 0.6, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_84d5808cca557a853ae40b701b15fd33 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_15c148054f0ef04c3af8abfefc4f1a81 = $(`<div id="html_15c148054f0ef04c3af8abfefc4f1a81" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Piemonte (Torino)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 3.70 mm<br>                     - ICON (Germania): 0.50 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 2.10 mm</b>                 </div>                 </div>`)[0];
+                popup_84d5808cca557a853ae40b701b15fd33.setContent(html_15c148054f0ef04c3af8abfefc4f1a81);
+            
+        
+
+        circle_a5699c5e4083e9facc6fdaf604e26761.bindPopup(popup_84d5808cca557a853ae40b701b15fd33)
+        ;
+
+        
+    
+    
+            circle_a5699c5e4083e9facc6fdaf604e26761.bindTooltip(
+                `<div>
+                     Piemonte: 2.1 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_b0919b2879dcae48daa71db8f5177910 = L.circle(
+                [44.41, 8.94],
+                {"bubblingMouseEvents": true, "color": "#0066ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0066ff", "fillOpacity": 0.6, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_e38a9f576beae81c53bd7b133cb2e82c = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_3e499571f4709342df1254151341ab6f = $(`<div id="html_3e499571f4709342df1254151341ab6f" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Liguria (Genova)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 5.40 mm<br>                     - ICON (Germania): 7.30 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 6.35 mm</b>                 </div>                 </div>`)[0];
+                popup_e38a9f576beae81c53bd7b133cb2e82c.setContent(html_3e499571f4709342df1254151341ab6f);
+            
+        
+
+        circle_b0919b2879dcae48daa71db8f5177910.bindPopup(popup_e38a9f576beae81c53bd7b133cb2e82c)
+        ;
+
+        
+    
+    
+            circle_b0919b2879dcae48daa71db8f5177910.bindTooltip(
+                `<div>
+                     Liguria: 6.4 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_57265a09b8c724d1506cf0683063969d = L.circle(
+                [45.46, 9.19],
+                {"bubblingMouseEvents": true, "color": "#9900cc", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#9900cc", "fillOpacity": 0.75, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_0a4e94734fb6feacdf738a4f5db7c471 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_ff74f77a6b4f6879b8d15c2ebc660d33 = $(`<div id="html_ff74f77a6b4f6879b8d15c2ebc660d33" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Lombardia (Milano)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 17.40 mm<br>                     - ICON (Germania): 18.40 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 17.90 mm</b>                 </div>                 </div>`)[0];
+                popup_0a4e94734fb6feacdf738a4f5db7c471.setContent(html_ff74f77a6b4f6879b8d15c2ebc660d33);
+            
+        
+
+        circle_57265a09b8c724d1506cf0683063969d.bindPopup(popup_0a4e94734fb6feacdf738a4f5db7c471)
+        ;
+
+        
+    
+    
+            circle_57265a09b8c724d1506cf0683063969d.bindTooltip(
+                `<div>
+                     Lombardia: 17.9 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_48c38124bb2c8664bbe76b097b75a134 = L.circle(
+                [46.07, 11.12],
+                {"bubblingMouseEvents": true, "color": "#33ccff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#33ccff", "fillOpacity": 0.45, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_30723c83c084cacc6c3f3d766cadf12d = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_8f782b1852fcfec580cbed1e72e83c4f = $(`<div id="html_8f782b1852fcfec580cbed1e72e83c4f" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Trentino-Alto Adige (Trento)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 3.30 mm<br>                     - ICON (Germania): 0.00 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 1.65 mm</b>                 </div>                 </div>`)[0];
+                popup_30723c83c084cacc6c3f3d766cadf12d.setContent(html_8f782b1852fcfec580cbed1e72e83c4f);
+            
+        
+
+        circle_48c38124bb2c8664bbe76b097b75a134.bindPopup(popup_30723c83c084cacc6c3f3d766cadf12d)
+        ;
+
+        
+    
+    
+            circle_48c38124bb2c8664bbe76b097b75a134.bindTooltip(
+                `<div>
+                     Trentino-Alto Adige: 1.6 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_e908ee7d4171175a856f33887b1967fb = L.circle(
+                [45.73, 7.31],
+                {"bubblingMouseEvents": true, "color": "#00ff00", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#00ff00", "fillOpacity": 0.12, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_a0842584670ccdd91eb48969a71a2295 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_586d509ca60f594a83d8fcfcace607af = $(`<div id="html_586d509ca60f594a83d8fcfcace607af" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Valle d'Aosta (Aosta)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 0.00 mm<br>                     - ICON (Germania): 0.00 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 0.00 mm</b>                 </div>                 </div>`)[0];
+                popup_a0842584670ccdd91eb48969a71a2295.setContent(html_586d509ca60f594a83d8fcfcace607af);
+            
+        
+
+        circle_e908ee7d4171175a856f33887b1967fb.bindPopup(popup_a0842584670ccdd91eb48969a71a2295)
+        ;
+
+        
+    
+    
+            circle_e908ee7d4171175a856f33887b1967fb.bindTooltip(
+                `<div>
+                     Valle d'Aosta: 0.0 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_3cc68b4ad48c712bc9f185b0963acddc = L.circle(
+                [44.49, 11.34],
+                {"bubblingMouseEvents": true, "color": "#0066ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0066ff", "fillOpacity": 0.6, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_2e675074141d8f79ee0983128fa7dffa = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_8aecf41199d7cf1c58c9f1e020af38ea = $(`<div id="html_8aecf41199d7cf1c58c9f1e020af38ea" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Emilia-Romagna (Bologna)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 15.20 mm<br>                     - ICON (Germania): 0.20 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 7.70 mm</b>                 </div>                 </div>`)[0];
+                popup_2e675074141d8f79ee0983128fa7dffa.setContent(html_8aecf41199d7cf1c58c9f1e020af38ea);
+            
+        
+
+        circle_3cc68b4ad48c712bc9f185b0963acddc.bindPopup(popup_2e675074141d8f79ee0983128fa7dffa)
+        ;
+
+        
+    
+    
+            circle_3cc68b4ad48c712bc9f185b0963acddc.bindTooltip(
+                `<div>
+                     Emilia-Romagna: 7.7 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_54dbb82b5ba1a22efa6ae5023fa9ad8e = L.circle(
+                [43.76, 11.25],
+                {"bubblingMouseEvents": true, "color": "#33ccff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#33ccff", "fillOpacity": 0.45, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_0d8c2d38e2f66d51c2570d0a14e012c9 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_974632798c7b5fe14132904c27b4446a = $(`<div id="html_974632798c7b5fe14132904c27b4446a" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Toscana (Firenze)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 3.60 mm<br>                     - ICON (Germania): 0.00 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 1.80 mm</b>                 </div>                 </div>`)[0];
+                popup_0d8c2d38e2f66d51c2570d0a14e012c9.setContent(html_974632798c7b5fe14132904c27b4446a);
+            
+        
+
+        circle_54dbb82b5ba1a22efa6ae5023fa9ad8e.bindPopup(popup_0d8c2d38e2f66d51c2570d0a14e012c9)
+        ;
+
+        
+    
+    
+            circle_54dbb82b5ba1a22efa6ae5023fa9ad8e.bindTooltip(
+                `<div>
+                     Toscana: 1.8 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_ff0f52e789475d7eb05a80497e0f704c = L.circle(
+                [43.61, 13.51],
+                {"bubblingMouseEvents": true, "color": "#33ccff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#33ccff", "fillOpacity": 0.45, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_6539b16f27c9ce2931d3fae0b09abb96 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_0c6e1ba1cb1f86222968a9eab3bc5b81 = $(`<div id="html_0c6e1ba1cb1f86222968a9eab3bc5b81" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Marche (Ancona)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 0.20 mm<br>                     - ICON (Germania): 0.00 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 0.10 mm</b>                 </div>                 </div>`)[0];
+                popup_6539b16f27c9ce2931d3fae0b09abb96.setContent(html_0c6e1ba1cb1f86222968a9eab3bc5b81);
+            
+        
+
+        circle_ff0f52e789475d7eb05a80497e0f704c.bindPopup(popup_6539b16f27c9ce2931d3fae0b09abb96)
+        ;
+
+        
+    
+    
+            circle_ff0f52e789475d7eb05a80497e0f704c.bindTooltip(
+                `<div>
+                     Marche: 0.1 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_2f0ad3a5f1d2de5d5023720ffeecc246 = L.circle(
+                [43.11, 12.39],
+                {"bubblingMouseEvents": true, "color": "#33ccff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#33ccff", "fillOpacity": 0.45, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_c8ec63cf8fba52e7936494bf2a5e8584 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_2d36f52fde80f5955adc670132c649fe = $(`<div id="html_2d36f52fde80f5955adc670132c649fe" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Umbria (Perugia)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 0.90 mm<br>                     - ICON (Germania): 1.00 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 0.95 mm</b>                 </div>                 </div>`)[0];
+                popup_c8ec63cf8fba52e7936494bf2a5e8584.setContent(html_2d36f52fde80f5955adc670132c649fe);
+            
+        
+
+        circle_2f0ad3a5f1d2de5d5023720ffeecc246.bindPopup(popup_c8ec63cf8fba52e7936494bf2a5e8584)
+        ;
+
+        
+    
+    
+            circle_2f0ad3a5f1d2de5d5023720ffeecc246.bindTooltip(
+                `<div>
+                     Umbria: 0.9 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_5b9edffa57f96a5c2daa7c4dcd4f824a = L.circle(
+                [41.89, 12.51],
+                {"bubblingMouseEvents": true, "color": "#0066ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0066ff", "fillOpacity": 0.6, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_860aeab6a7d232a719b92660385d3506 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_747019c963238b44432b497ebc5e2536 = $(`<div id="html_747019c963238b44432b497ebc5e2536" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Lazio (Roma)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 7.30 mm<br>                     - ICON (Germania): 0.10 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 3.70 mm</b>                 </div>                 </div>`)[0];
+                popup_860aeab6a7d232a719b92660385d3506.setContent(html_747019c963238b44432b497ebc5e2536);
+            
+        
+
+        circle_5b9edffa57f96a5c2daa7c4dcd4f824a.bindPopup(popup_860aeab6a7d232a719b92660385d3506)
+        ;
+
+        
+    
+    
+            circle_5b9edffa57f96a5c2daa7c4dcd4f824a.bindTooltip(
+                `<div>
+                     Lazio: 3.7 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_c3bc2fe2249b5947f59cd9bc8fd8273d = L.circle(
+                [42.35, 13.39],
+                {"bubblingMouseEvents": true, "color": "#0066ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0066ff", "fillOpacity": 0.6, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_76867727f99c7bcd8389eeeda0e95303 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_d3db29f0fe1de6524836c52f3f295f47 = $(`<div id="html_d3db29f0fe1de6524836c52f3f295f47" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Abruzzo (L'Aquila)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 3.90 mm<br>                     - ICON (Germania): 2.00 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 2.95 mm</b>                 </div>                 </div>`)[0];
+                popup_76867727f99c7bcd8389eeeda0e95303.setContent(html_d3db29f0fe1de6524836c52f3f295f47);
+            
+        
+
+        circle_c3bc2fe2249b5947f59cd9bc8fd8273d.bindPopup(popup_76867727f99c7bcd8389eeeda0e95303)
+        ;
+
+        
+    
+    
+            circle_c3bc2fe2249b5947f59cd9bc8fd8273d.bindTooltip(
+                `<div>
+                     Abruzzo: 3.0 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_0dc129437ce9aa0610b728f94d73feb0 = L.circle(
+                [41.56, 14.65],
+                {"bubblingMouseEvents": true, "color": "#0066ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0066ff", "fillOpacity": 0.6, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_3975531f9371f7b892f59f793ec07a1a = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_04d685ae3e1d4a1dd64014e5ae91c961 = $(`<div id="html_04d685ae3e1d4a1dd64014e5ae91c961" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Molise (Campobasso)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 7.00 mm<br>                     - ICON (Germania): 0.10 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 3.55 mm</b>                 </div>                 </div>`)[0];
+                popup_3975531f9371f7b892f59f793ec07a1a.setContent(html_04d685ae3e1d4a1dd64014e5ae91c961);
+            
+        
+
+        circle_0dc129437ce9aa0610b728f94d73feb0.bindPopup(popup_3975531f9371f7b892f59f793ec07a1a)
+        ;
+
+        
+    
+    
+            circle_0dc129437ce9aa0610b728f94d73feb0.bindTooltip(
+                `<div>
+                     Molise: 3.5 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_8f24574e5feea19de4e1823856e03908 = L.circle(
+                [40.85, 14.26],
+                {"bubblingMouseEvents": true, "color": "#33ccff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#33ccff", "fillOpacity": 0.45, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_daf8d7b4909f58fd8a91681c3dcb0608 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_ca971cb93db6d142fc071864fff85b1a = $(`<div id="html_ca971cb93db6d142fc071864fff85b1a" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Campania (Napoli)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 0.80 mm<br>                     - ICON (Germania): 0.00 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 0.40 mm</b>                 </div>                 </div>`)[0];
+                popup_daf8d7b4909f58fd8a91681c3dcb0608.setContent(html_ca971cb93db6d142fc071864fff85b1a);
+            
+        
+
+        circle_8f24574e5feea19de4e1823856e03908.bindPopup(popup_daf8d7b4909f58fd8a91681c3dcb0608)
+        ;
+
+        
+    
+    
+            circle_8f24574e5feea19de4e1823856e03908.bindTooltip(
+                `<div>
+                     Campania: 0.4 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_b57c95504f6d41ee111c78f66185ea77 = L.circle(
+                [41.11, 16.87],
+                {"bubblingMouseEvents": true, "color": "#00ff00", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#00ff00", "fillOpacity": 0.12, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_9170e5c97bfb514f7796d72832527d16 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_3e82645162f4ce9a9632767be4142de5 = $(`<div id="html_3e82645162f4ce9a9632767be4142de5" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Puglia (Bari)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 0.00 mm<br>                     - ICON (Germania): 0.00 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 0.00 mm</b>                 </div>                 </div>`)[0];
+                popup_9170e5c97bfb514f7796d72832527d16.setContent(html_3e82645162f4ce9a9632767be4142de5);
+            
+        
+
+        circle_b57c95504f6d41ee111c78f66185ea77.bindPopup(popup_9170e5c97bfb514f7796d72832527d16)
+        ;
+
+        
+    
+    
+            circle_b57c95504f6d41ee111c78f66185ea77.bindTooltip(
+                `<div>
+                     Puglia: 0.0 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_6f0cdbec4974f875a6267746d4fc8301 = L.circle(
+                [40.64, 15.8],
+                {"bubblingMouseEvents": true, "color": "#33ccff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#33ccff", "fillOpacity": 0.45, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_b22a40472e43c8848c1c6a0260acec08 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_2162b6f5bb063daa3f8a2535cf21f44d = $(`<div id="html_2162b6f5bb063daa3f8a2535cf21f44d" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Basilicata (Potenza)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 2.70 mm<br>                     - ICON (Germania): 0.10 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 1.40 mm</b>                 </div>                 </div>`)[0];
+                popup_b22a40472e43c8848c1c6a0260acec08.setContent(html_2162b6f5bb063daa3f8a2535cf21f44d);
+            
+        
+
+        circle_6f0cdbec4974f875a6267746d4fc8301.bindPopup(popup_b22a40472e43c8848c1c6a0260acec08)
+        ;
+
+        
+    
+    
+            circle_6f0cdbec4974f875a6267746d4fc8301.bindTooltip(
+                `<div>
+                     Basilicata: 1.4 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_0710db439cc105ada3fff2b4929e8be6 = L.circle(
+                [38.9, 16.59],
+                {"bubblingMouseEvents": true, "color": "#0066ff", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#0066ff", "fillOpacity": 0.6, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_28bf0561a3b2c5522e964d8b8e74bb47 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_2beefa47a7364a9782d448612d81b922 = $(`<div id="html_2beefa47a7364a9782d448612d81b922" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Calabria (Catanzaro)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 4.60 mm<br>                     - ICON (Germania): 0.00 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 2.30 mm</b>                 </div>                 </div>`)[0];
+                popup_28bf0561a3b2c5522e964d8b8e74bb47.setContent(html_2beefa47a7364a9782d448612d81b922);
+            
+        
+
+        circle_0710db439cc105ada3fff2b4929e8be6.bindPopup(popup_28bf0561a3b2c5522e964d8b8e74bb47)
+        ;
+
+        
+    
+    
+            circle_0710db439cc105ada3fff2b4929e8be6.bindTooltip(
+                `<div>
+                     Calabria: 2.3 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_3a98e373a4c20eaabe3fe3a5e97262bd = L.circle(
+                [38.11, 13.36],
+                {"bubblingMouseEvents": true, "color": "#00ff00", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#00ff00", "fillOpacity": 0.12, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_d8c32f0c4147a78134fb835bbbf774b1 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_ef8fd4b60e884fcd0cd620d30ffce5ba = $(`<div id="html_ef8fd4b60e884fcd0cd620d30ffce5ba" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Sicilia (Palermo)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 0.00 mm<br>                     - ICON (Germania): 0.00 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 0.00 mm</b>                 </div>                 </div>`)[0];
+                popup_d8c32f0c4147a78134fb835bbbf774b1.setContent(html_ef8fd4b60e884fcd0cd620d30ffce5ba);
+            
+        
+
+        circle_3a98e373a4c20eaabe3fe3a5e97262bd.bindPopup(popup_d8c32f0c4147a78134fb835bbbf774b1)
+        ;
+
+        
+    
+    
+            circle_3a98e373a4c20eaabe3fe3a5e97262bd.bindTooltip(
+                `<div>
+                     Sicilia: 0.0 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_e1c03e0c4227a0ce0f83399b8452f55f = L.circle(
+                [39.22, 9.12],
+                {"bubblingMouseEvents": true, "color": "#00ff00", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#00ff00", "fillOpacity": 0.12, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 55000, "stroke": true, "weight": 3}
+            ).addTo(map_b500754f3db002007ac089d1e42261f5);
+        
+    
+        var popup_5f1aa43e55c475c651630a5602554330 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_bdf3524d836e5797b9506bc793a67dee = $(`<div id="html_bdf3524d836e5797b9506bc793a67dee" style="width: 100.0%; height: 100.0%;">                 <div style='font-family: Arial; font-size: 12px; min-width: 180px;'>                     <b>Sardegna (Cagliari)</b><br>                     <small>Aggiornato alle: 01:14:36</small><br><br>                     Accumulo previsto 24h:<br>                     - GFS (USA): 0.00 mm<br>                     - ICON (Germania): 0.00 mm<br>                     <hr style='border: 0; border-top: 1px solid #ccc;'>                     <b>MEDIA ENSEMBLE: 0.00 mm</b>                 </div>                 </div>`)[0];
+                popup_5f1aa43e55c475c651630a5602554330.setContent(html_bdf3524d836e5797b9506bc793a67dee);
+            
+        
+
+        circle_e1c03e0c4227a0ce0f83399b8452f55f.bindPopup(popup_5f1aa43e55c475c651630a5602554330)
+        ;
+
+        
+    
+    
+            circle_e1c03e0c4227a0ce0f83399b8452f55f.bindTooltip(
+                `<div>
+                     Sardegna: 0.0 mm
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+</script>
+</html>
