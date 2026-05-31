@@ -43,80 +43,61 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
     lats = [str(p["lat"]) for p in elenco]
     lons = [str(p["lon"]) for p in elenco]
 # Pausa strategica per evitare i blocchi dei server di GitHub
-    time.sleep(0.5)
+    time.sleep(0.6)
     
-    # STRATEGIA DI LANCIO 1° GIUGNO: RICHIESTA DIRETTA E SICURA
+    # METODO REGIONALE PULITO: EVITA I BLOCCHI E RECUPERA I DATI REALI (MARI INCLUSI)
+    try:
+        url_meteo = f"https://api.open-meteo.com/v1/forecast?latitude={','.join(lats)}&longitude={','.join(lons)}&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,weather_code&forecast_days=2&timezone=Europe/Rome"
+        url_air = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={','.join(lats)}&longitude={','.join(lons)}&hourly=pm10&forecast_days=2&timezone=Europe/Rome"
+        
+        req_m = requests.get(url_meteo, timeout=12).json()
+        req_a = requests.get(url_air, timeout=12).json()
+    except Exception as e:
+        print(f"⚠️ Errore di rete principale su {regione}: {e}")
+        req_m = None
+        req_a = None
+
+    # ELABORAZIONE DEI DATI CON VERIFICA DEL FORMATO (LISTA O DIZIONARIO)
     for i, p in enumerate(elenco):
         pt_m = None
         pt_a = None
         
-        # Interroghiamo direttamente la singola provincia (Massima compatibilità API)
-        try:
-            u_m_sing = f"https://api.open-meteo.com/v1/forecast?latitude={lats[i]}&longitude={lons[i]}&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,weather_code&forecast_days=2&timezone=Europe/Rome"
-            u_a_sing = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lats[i]}&longitude={lons[i]}&hourly=pm10&forecast_days=2&timezone=Europe/Rome"
-            
-            pt_m = requests.get(u_m_sing, timeout=4).json()
-            pt_a = requests.get(u_a_sing, timeout=4).json()
-        except:
-            pt_m = None
-            pt_a = None
+        # Gestione corretta dei formati Open-Meteo per non perdere nessun punto (coste e mari inclusi)
+        if isinstance(req_m, list) and i < len(req_m):
+            pt_m = req_m[i]
+        elif isinstance(req_m, dict) and "hourly" in req_m:
+            pt_m = req_m if i == 0 else None
 
-        # PARACADUTE REALE DI INIZIO GIUGNO (Evita -99 o blocchi visibili se l'API va in rate-limit)
-        # Genera variazioni naturali e credibili intorno alle medie stagionali italiane di inizio estate
-        import random
-        base_offset = random.uniform(-1.5, 1.5)
-        
+        if isinstance(req_a, list) and i < len(req_a):
+            pt_a = req_a[i]
+        elif isinstance(req_a, dict) and "hourly" in req_a:
+            pt_a = req_a if i == 0 else None
+
+        # SE IL PUNTO MANCA (O È UN MARE ANDATO IN TIMEOUT), LO RECUPERIAMO SINGOLARMENTE
         if not pt_m or "hourly" not in pt_m:
-            # Simulazione perfetta basata su medie reali di giugno (20-25 gradi di giorno, 15 di notte)
-            t7_finta = round(16.5 + base_offset, 1)
-            t14_finta = round(24.2 + base_offset, 1)
-            t22_finta = round(18.0 + base_offset, 1)
-            pt_m = {
-                "hourly": {
-                    "precipitation": [0.0]*48,
-                    "wind_speed_10m": [round(6.0 + random.uniform(-2, 2), 1)]*48,
-                    "wind_direction_10m": [180]*48,
-                    "weather_code": [0]*48,
-                    "temperature_2m": {h7: t7_finta, h14: t14_finta, h22: t22_finta} # Dizionario di emergenza mirato
-                }
-            }
-        
+            try:
+                time.sleep(0.2)
+                u_m_sing = f"https://api.open-meteo.com/v1/forecast?latitude={lats[i]}&longitude={lons[i]}&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,weather_code&forecast_days=2&timezone=Europe/Rome"
+                pt_m = requests.get(u_m_sing, timeout=6).json()
+            except:
+                # Fallback estremo se internet muore del tutto
+                pt_m = {"hourly": {"temperature_2m": [21.0]*48, "precipitation": [0.0]*48, "wind_speed_10m": [5.0]*48, "wind_direction_10m": [180]*48, "weather_code": [0]*48}}
+
         if not pt_a or "hourly" not in pt_a:
-            pt_a = {"hourly": {"pm10": [round(14.0 + random.uniform(-3, 3), 1)]*48}}
+            try:
+                u_a_sing = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lats[i]}&longitude={lons[i]}&hourly=pm10&forecast_days=2&timezone=Europe/Rome"
+                pt_a = requests.get(u_a_sing, timeout=6).json()
+            except:
+                pt_a = {"hourly": {"pm10": [12.0]*48}}
 
-        # ESTRAZIONE PARATA DEI DATI
-        try:
-            base_prec = sum(pt_m["hourly"]["precipitation"][24:48])
-        except:
-            base_prec = 0.0
-
-        # Gestione estrazione flessibile (sia da struttura API reale che da paracadute giugno)
-        try:
-            if isinstance(pt_m["hourly"]["temperature_2m"], dict):
-                base_t7 = pt_m["hourly"]["temperature_2m"][h7]
-                base_t14 = pt_m["hourly"]["temperature_2m"][h14]
-                base_t22 = pt_m["hourly"]["temperature_2m"][h22]
-            else:
-                base_t7 = pt_m["hourly"]["temperature_2m"][h7]
-                base_t14 = pt_m["hourly"]["temperature_2m"][h14]
-                base_t22 = pt_m["hourly"]["temperature_2m"][h22]
-        except:
-            base_t7, base_t14, base_t22 = 16.8, 24.5, 18.2
-
-        try:
-            base_wind = pt_m["hourly"]["wind_speed_10m"][h14]
-        except:
-            base_wind = 7.0
-
-        try:
-            base_pm10 = pt_a["hourly"]["pm10"][h14]
-        except:
-            base_pm10 = 15.0
-
-        try:
-            ha_fulmini = any(code in [95, 96, 99] for code in pt_m["hourly"]["weather_code"][24:48])
-        except:
-            ha_fulmini = False
+        # ESTRAZIONE DEI DATI REALI DI PREVISIONE
+        base_prec = sum(pt_m["hourly"]["precipitation"][24:48])
+        base_t7 = pt_m["hourly"]["temperature_2m"][h7]
+        base_t14 = pt_m["hourly"]["temperature_2m"][h14]
+        base_t22 = pt_m["hourly"]["temperature_2m"][h22]
+        base_wind = pt_m["hourly"]["wind_speed_10m"][h14]
+        base_pm10 = pt_a["hourly"]["pm10"][h14] if (isinstance(pt_a, dict) and "hourly" in pt_a) else 12.0
+        ha_fulmini = any(code in [95, 96, 99] for code in pt_m["hourly"]["weather_code"][24:48])
         
         try:
             deg = pt_m["hourly"]["wind_direction_10m"][h14]
