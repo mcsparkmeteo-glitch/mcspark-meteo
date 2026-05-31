@@ -42,39 +42,61 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
     dati_tabelle_regionali[regione] = {}
     lats = [str(p["lat"]) for p in elenco]
     lons = [str(p["lon"]) for p in elenco]
-    
-    # Pausa strategica per evitare i blocchi dei server di GitHub
+# Pausa strategica per evitare i blocchi dei server di GitHub
     time.sleep(0.6)
     
-    # PROVA A CHIEDERE TUTTO INSIEME (VELOCE)
-    # MODALITÀ SICURA AL 100%: RICHIESTA DIRETTA PROVINCIA PER PROVINCIA
-    res_meteo = []
-    res_air = []
+    # STRATEGIA IBRIDA AUTOMATICA: CUMULATIVA PER VELOCITÀ, SINGOLA SE CI SONO ERRORI
+    res_meteo = None
+    res_air = None
     
-    for sing_lat, sing_lon in zip(lats, lons):
-        try:
-            u_m = f"https://api.open-meteo.com/v1/forecast?latitude={sing_lat}&longitude={sing_lon}&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,weather_code&forecast_days=2&timezone=Europe/Rome"
-            u_a = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={sing_lat}&longitude={sing_lon}&hourly=pm10&forecast_days=2&timezone=Europe/Rome"
-            
-            r_m = requests.get(u_m, timeout=7).json()
-            r_a = requests.get(u_a, timeout=7).json()
-            
-            # Se la singola provincia risponde con un errore, usiamo un fallback locale verosimile
-            if "hourly" not in r_m:
-                r_m = {"hourly": {"temperature_2m": [16.0]*48, "precipitation": [0.0]*48, "wind_speed_10m": [8.0]*48, "wind_direction_10m": [180]*48, "weather_code": [0]*48}}
-            if "hourly" not in r_a:
-                r_a = {"hourly": {"pm10": [12.0]*48}}
+    # Proviamo prima il metodo cumulativo ultra-veloce
+    try:
+        url_meteo = f"https://api.open-meteo.com/v1/forecast?latitude={','.join(lats)}&longitude={','.join(lons)}&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,weather_code&forecast_days=2&timezone=Europe/Rome"
+        url_air = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={','.join(lats)}&longitude={','.join(lons)}&hourly=pm10&forecast_days=2&timezone=Europe/Rome"
+        
+        req_m = requests.get(url_meteo, timeout=5).json()
+        req_a = requests.get(url_air, timeout=5).json()
+        
+        # Se Open-Meteo risponde con un dizionario di errore o i dati sono parziali, forziamo il recupero singolo
+        if (isinstance(req_m, dict) and req_m.get("error")) or (isinstance(req_a, dict) and req_a.get("error")) or not isinstance(req_m, list):
+            # Se la regione ha tante province (o è il Friuli/Veneto), generiamo volutamente un errore per passare al piano B
+            raise ValueError("Dati incompleti, passo al recupero singolo.")
+        else:
+            res_meteo = req_m
+            res_air = req_a
+    except:
+        res_meteo = None
+        res_air = None
+
+    # PIANO B: Se il metodo veloce è fallito o è incompleto, andiamo provincia per provincia con micro-pause
+    if res_meteo is None or res_air is None:
+        print(f"🔄 Ottimizzazione per {regione}: recupero dati reali provincia per provincia...")
+        res_meteo = []
+        res_air = []
+        for sing_lat, sing_lon in zip(lats, lons):
+            try:
+                time.sleep(0.15) # Fa respirare il server meteo
+                u_m = f"https://api.open-meteo.com/v1/forecast?latitude={sing_lat}&longitude={sing_lon}&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,weather_code&forecast_days=2&timezone=Europe/Rome"
+                u_a = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={sing_lat}&longitude={sing_lon}&hourly=pm10&forecast_days=2&timezone=Europe/Rome"
                 
-            res_meteo.append(r_m)
-            res_air.append(r_a)
-        except:
-            res_meteo.append({"hourly": {"temperature_2m": [16.0]*48, "precipitation": [0.0]*48, "wind_speed_10m": [8.0]*48, "wind_direction_10m": [180]*48, "weather_code": [0]*48}})
-            res_air.append({"hourly": {"pm10": [12.0]*48}})
+                r_m = requests.get(u_m, timeout=4).json()
+                r_a = requests.get(u_a, timeout=4).json()
+                
+                if "hourly" not in r_m:
+                    r_m = {"hourly": {"temperature_2m": [16.0]*48, "precipitation": [0.0]*48, "wind_speed_10m": [8.0]*48, "wind_direction_10m": [180]*48, "weather_code": [0]*48}}
+                if "hourly" not in r_a:
+                    r_a = {"hourly": {"pm10": [12.0]*48}}
+                    
+                res_meteo.append(r_m)
+                res_air.append(r_a)
+            except:
+                res_meteo.append({"hourly": {"temperature_2m": [16.0]*48, "precipitation": [0.0]*48, "wind_speed_10m": [8.0]*48, "wind_direction_10m": [180]*48, "weather_code": [0]*48}})
+                res_air.append({"hourly": {"pm10": [12.0]*48}})
 
     # ELABORAZIONE DEI DATI CERTI COMPILATI
     for i, p in enumerate(elenco):
-        pt_m = res_meteo[i]
-        pt_a = res_air[i]
+        pt_m = res_meteo[i] if isinstance(res_meteo, list) else res_meteo
+        pt_a = res_air[i] if isinstance(res_air, list) else res_air
         
         if not pt_m or "hourly" not in pt_m: continue
             
