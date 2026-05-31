@@ -257,11 +257,11 @@ interfaccia_custom_html = f"""
     <radialGradient id="grad-4575b4"><stop offset="0%" stop-color="#4575b4" stop-opacity="0.85"/><stop offset="100%" stop-color="#4575b4" stop-opacity="0"/></radialGradient>
 </defs></svg>
 
-<div id="sidebar-tabelle-mcspark">
+<div id="sidebar-tabelle-mcspark" style="position: fixed !important; bottom: 20px !important; left: 20px !important; width: 320px !important; height: 300px !important; background: rgba(255, 255, 255, 0.95) !important; border: 2px solid #2c3e50 !important; border-radius: 8px !important; z-index: 9999 !important; font-family: Arial, sans-serif !important; box-shadow: 4px 4px 15px rgba(0,0,0,0.2) !important; padding: 12px !important; overflow-y: auto !important; display: block !important; box-sizing: border-box !important;">
     <div id="contenitore-vuoto-sidebar">
-        <h2 style='text-align:center; color:#2c3e50; font-size:16px; margin-top:10px;'>📊 Report Dettagliato</h2>
-        <div class="messaggio-benvenuto-sidebar">
-            <span style="font-size: 30px;">🗺️</span><br><br>
+        <h2 style='text-align:center; color:#2c3e50; font-size:15px; margin-top:5px;'>📊 Report Dettagliato</h2>
+        <div class="messaggio-benvenuto-sidebar" style="font-size: 11px !important; color: #555 !important; text-align: center !important; margin-top: 10px !important; line-height: 1.4 !important;">
+            <span style="font-size: 24px;">🗺️</span><br><br>
             <b>Clicca direttamente sul cerchietto vicino alla regione</b> per vederne istantaneamente i dati provinciali completi qui a sinistra.
         </div>
     </div>
