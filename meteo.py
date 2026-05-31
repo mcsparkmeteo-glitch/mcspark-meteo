@@ -213,28 +213,28 @@ interfaccia_custom_html = f"""
     .sfumatura-66bd63 {{ fill: url(#grad-66bd63) !important; }} .sfumatura-4575b4 {{ fill: url(#grad-4575b4) !important; }}
     
     #sidebar-tabelle-mcspark {{
-        position: fixed; 
-        bottom: 20px; 
-        left: 20px; 
-        width: 320px; 
-        height: 300px; 
-        background: rgba(255, 255, 255, 0.95); 
-        border: 2px solid #2c3e50; 
-        border-radius: 8px;
-        z-index: 9999; 
-        font-family: Arial, sans-serif; 
-        box-shadow: 4px 4px 15px rgba(0,0,0,0.2);
-        padding: 12px; 
-        overflow-y: auto; 
-        display: block; 
-        box-sizing: border-box;
+        position: fixed !important; 
+        bottom: 20px !important; 
+        left: 20px !important; 
+        width: 320px !important; 
+        height: 300px !important; 
+        background: rgba(255, 255, 255, 0.95) !important; 
+        border: 2px solid #2c3e50 !important; 
+        border-radius: 8px !important;
+        z-index: 9999 !important; 
+        font-family: Arial, sans-serif !important; 
+        box-shadow: 4px 4px 15px rgba(0,0,0,0.2) !important;
+        padding: 12px !important; 
+        overflow-y: auto !important; 
+        display: block !important; 
+        box-sizing: border-box !important;
     }}
     .messaggio-benvenuto-sidebar {{ 
-        font-size: 11px; 
-        color: #555; 
-        text-align: center; 
-        margin-top: 15px; 
-        line-height: 1.4; 
+        font-size: 11px !important; 
+        color: #555 !important; 
+        text-align: center !important; 
+        margin-top: 15px !important; 
+        line-height: 1.4 !important; 
     }}
     
     #pannello-meteo-pulsanti {{ position: fixed; top: 20px; right: 20px; background: white; padding: 12px; border: 2px solid #2c3e50; border-radius: 8px; z-index: 9999; font-family: Arial, sans-serif; box-shadow: 0px 4px 10px rgba(0,0,0,0.15); width: 220px; }}
