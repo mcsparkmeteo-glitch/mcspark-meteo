@@ -319,12 +319,13 @@ setTimeout(() => {{ aggiornaMappaEInvolucri('pioggia'); }}, 300);
 map_italia.get_root().html.add_child(folium.Element(interfaccia_custom_html))
 
 # CODE CRASH: FORZATURA ASSOLUTA VIA JAVASCRIPT - VERSIONE COMPATTA SENZA COPERTURE
+# SPOSTAMENTO LOGO FISSO IN BASSO A DESTRA E DIRITTI AL CENTRO
 branding_html = (
     f'<script>'
     f'setTimeout(() => {{'
     f'  var sidebar = document.getElementById("sidebar-tabelle-mcspark");'
     f'  if(sidebar) {{'
-    # Rimpicciolito: Larghezza ridotta a 290px e altezza a 210px (perfetto per il testo e senza vuoti)
+    # Box rimpicciolito perfetto come adesso
     f'    sidebar.style.setProperty("position", "fixed", "important");'
     f'    sidebar.style.setProperty("bottom", "20px", "important");'
     f'    sidebar.style.setProperty("left", "20px", "important");'
@@ -337,20 +338,14 @@ branding_html = (
     f'    sidebar.style.setProperty("border", "2px solid #2c3e50", "important");'
     f'    sidebar.style.setProperty("border-radius", "8px", "important");'
     f'    sidebar.style.setProperty("padding", "8px", "important");'
-    
-    # SPOSTAMENTO LOGO: Lo mettiamo agganciato al "contenitore-vuoto-sidebar" 
-    # così appare SOLO all'inizio insieme al messaggio di benvenuto, 
-    # ma SCOMPARE e non copre nulla quando si caricano le tabelle delle regioni!
-    f'    var contenitoreVuoto = document.getElementById("contenitore-vuoto-sidebar");'
-    f'    if(contenitoreVuoto) {{'
-    f'      var logoDiv = document.createElement("div");'
-    f'      logoDiv.style = "text-align: center; margin-top: 10px;";'
-    f'      logoDiv.innerHTML = "<img src=\'{FILE_LOGO_LOCAL}\' style=\'width: 50px; height: auto; border: 1px solid #2c3e50; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.15); display: inline-block;\'>";'
-    f'      contenitoreVuoto.appendChild(logoDiv);'
-    f'    }}'
     f'  }}'
     f'}}, 200);'
     f'</script>'
+    
+    # LOGO MCSPARK FISSO IN BASSO A DESTRA (SOPRA I DIRITTI RISERVATI)
+    f'<div style="position: fixed; bottom: 35px; right: 20px; width: 60px; height: auto; z-index: 9999; border: 1px solid #2c3e50; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">'
+    f'  <img src="{FILE_LOGO_LOCAL}" style="width:100%; display:block;">'
+    f'</div>'
     
     # Barra dei diritti in basso al centro
     f'<div style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); background-color: rgba(255,255,255,0.9); padding: 4px 10px; border-radius: 4px; z-index: 9999; font-family: Arial, sans-serif; font-size: 10px; color: #333; border: 1px solid #ccc; box-shadow: 0px 2px 5px rgba(0,0,0,0.1); text-align: center; white-space: nowrap;">'
@@ -360,6 +355,4 @@ branding_html = (
 map_italia.get_root().html.add_child(folium.Element(branding_html))
 
 map_italia.save("index.html")
-print("✅ Interfaccia ottimizzata: dimensioni ridotte e logo dinamico salvato!")
-map_italia.save("index.html")
-print("✅ Interfaccia forzata via JS applicata con successo!")
+print("✅ Interfaccia completata: logo spostato in basso a destra fisso!")
