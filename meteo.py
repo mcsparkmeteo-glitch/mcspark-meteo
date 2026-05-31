@@ -213,12 +213,29 @@ interfaccia_custom_html = f"""
     .sfumatura-66bd63 {{ fill: url(#grad-66bd63) !important; }} .sfumatura-4575b4 {{ fill: url(#grad-4575b4) !important; }}
     
     #sidebar-tabelle-mcspark {{
-        position: fixed; top: 20px; left: 20px; width: 380px; height: calc(100% - 120px);
-        background: rgba(255, 255, 255, 0.98); border: 2px solid #2c3e50; border-radius: 8px;
-        z-index: 9999; font-family: Arial, sans-serif; box-shadow: 4px 4px 15px rgba(0,0,0,0.2);
-        padding: 15px; overflow-y: auto; display: block; box-sizing: border-box;
+        position: fixed; 
+        bottom: 20px; 
+        left: 20px; 
+        width: 320px; 
+        height: 300px; 
+        background: rgba(255, 255, 255, 0.95); 
+        border: 2px solid #2c3e50; 
+        border-radius: 8px;
+        z-index: 9999; 
+        font-family: Arial, sans-serif; 
+        box-shadow: 4px 4px 15px rgba(0,0,0,0.2);
+        padding: 12px; 
+        overflow-y: auto; 
+        display: block; 
+        box-sizing: border-box;
     }}
-    .messaggio-benvenuto-sidebar {{ font-size: 13px; color: #555; text-align: center; margin-top: 40px; line-height: 1.5; }}
+    .messaggio-benvenuto-sidebar {{ 
+        font-size: 11px; 
+        color: #555; 
+        text-align: center; 
+        margin-top: 15px; 
+        line-height: 1.4; 
+    }}
     
     #pannello-meteo-pulsanti {{ position: fixed; top: 20px; right: 20px; background: white; padding: 12px; border: 2px solid #2c3e50; border-radius: 8px; z-index: 9999; font-family: Arial, sans-serif; box-shadow: 0px 4px 10px rgba(0,0,0,0.15); width: 220px; }}
     #pannello-meteo-pulsanti h4 {{ margin: 0 0 10px 0; font-size: 13px; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; text-align: center;}}
