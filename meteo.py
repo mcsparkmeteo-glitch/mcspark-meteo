@@ -45,21 +45,21 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
 # Pausa strategica per evitare i blocchi dei server di GitHub
     time.sleep(0.6)
     
-    # VERSIONE DEFINITIVA E BLINDATA: RICHIESTA UNICA STANDARD SENZA INTERRUZIONI
+    # VERSIONE RIPULITA E DIRETTA: RICHIESTA UNICA STANDARD
     try:
         url_meteo = f"https://api.open-meteo.com/v1/forecast?latitude={','.join(lats)}&longitude={','.join(lons)}&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,weather_code&forecast_days=2&timezone=Europe/Rome"
         url_air = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={','.join(lats)}&longitude={','.join(lons)}&hourly=pm10&forecast_days=2&timezone=Europe/Rome"
         
-        res_meteo = requests.get(url_meteo, timeout=15).json()
-        res_air = requests.get(url_air, timeout=15).json()
+        res_meteo = requests.get(url_meteo, timeout=12).json()
+        res_air = requests.get(url_air, timeout=12).json()
     except Exception as e:
         print(f"⚠️ Errore di rete su {regione}: {e}")
         res_meteo = None
         res_air = None
 
-    # ELABORAZIONE SICURA AL 100% DEI DATI REALI RECEIVED
+    # ELABORAZIONE INTEGRATA: LEGGE CORRETTAMENTE SIA LE LISTE CHE I DIZIONARI SINGOLI
     for i, p in enumerate(elenco):
-        # 1. ESTRIAMO IL METEO CONTROLLANDO SE LA RISPOSTA È UNA LISTA O UN DIZIONARIO SINGOLO
+        # Controllo formato Open-Meteo per evitare i blocchi su Friuli/Veneto
         if isinstance(res_meteo, list) and i < len(res_meteo):
             pt_m = res_meteo[i]
         elif isinstance(res_meteo, dict) and "hourly" in res_meteo:
@@ -67,7 +67,6 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
         else:
             pt_m = None
 
-        # 2. ESTRIAMO L'ARIA CONTROLLANDO SE LA RISPOSTA È UNA LISTA O UN DIZIONARIO SINGOLO
         if isinstance(res_air, list) and i < len(res_air):
             pt_a = res_air[i]
         elif isinstance(res_air, dict) and "hourly" in res_air:
@@ -75,7 +74,7 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
         else:
             pt_a = None
             
-        # 3. SE PER QUALSIASI MOTIVO IL DATO GENERALE MANCA, FACCIAMO L'UNICO RECUPERO SINGOLO DI SICUREZZA
+        # Se i dati principali sono assenti, recupero singolo al volo solo per la provincia fallita
         if not pt_m or "hourly" not in pt_m:
             try:
                 u_m_sing = f"https://api.open-meteo.com/v1/forecast?latitude={lats[i]}&longitude={lons[i]}&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,weather_code&forecast_days=2&timezone=Europe/Rome"
@@ -90,7 +89,7 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
             except:
                 pt_a = {"hourly": {"pm10": [10.0]*48}}
 
-        # ESTRAZIONE FINALE DEI PARAMETRI (DATI REALI E CERTIFICATI)
+        # ESTRAZIONE PARAMETRI DEFINITIVI
         base_prec = sum(pt_m["hourly"]["precipitation"][24:48])
         base_t7 = pt_m["hourly"]["temperature_2m"][h7]
         base_t14 = pt_m["hourly"]["temperature_2m"][h14]
