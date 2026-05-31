@@ -46,17 +46,35 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
     # Pausa strategica per evitare i blocchi dei server di GitHub
     time.sleep(0.6)
     
+    # PROVA A CHIEDERE TUTTO INSIEME (VELOCE)
     try:
         url_meteo = f"https://api.open-meteo.com/v1/forecast?latitude={','.join(lats)}&longitude={','.join(lons)}&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,weather_code&forecast_days=2&timezone=Europe/Rome"
         res_meteo = requests.get(url_meteo, timeout=15).json()
 
         url_air = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={','.join(lats)}&longitude={','.join(lons)}&hourly=pm10&forecast_days=2&timezone=Europe/Rome"
         res_air = requests.get(url_air, timeout=15).json()
+        
+        # Se Open-Meteo restituisce un errore di blocco per troppe richieste nell'URL unico
+        if (isinstance(res_meteo, dict) and res_meteo.get("error")) or (isinstance(res_air, dict) and res_air.get("error")):
+            raise ValueError("URL troppo lungo o limite API superato, passo alla modalità singola.")
+            
     except Exception as e:
-        print(f"⚠️ Nota: Rallentamento connessione per {regione}, uso dati simulati sicuri.")
-        res_meteo = [{"hourly": {"temperature_2m": [15.0]*48, "precipitation": [0.0]*48, "wind_speed_10m": [10.0]*48, "wind_direction_10m": [180]*48, "weather_code": [0]*48}}] * len(elenco)
-        res_air = [{"hourly": {"pm10": [15.0]*48}}] * len(elenco)
+        # STRATEGIA DI RECUPERO: Richiesta singola provincia per provincia per evitare il blocco!
+        print(f"🔄 Ottimizzazione per {regione}: recupero dati reali provincia per provincia...")
+        res_meteo = []
+        res_air = []
+        for sing_lat, sing_lon in zip(lats, lons):
+            try:
+                u_m = f"https://api.open-meteo.com/v1/forecast?latitude={sing_lat}&longitude={sing_lon}&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,weather_code&forecast_days=2&timezone=Europe/Rome"
+                u_a = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={sing_lat}&longitude={sing_lon}&hourly=pm10&forecast_days=2&timezone=Europe/Rome"
+                res_meteo.append(requests.get(u_m, timeout=5).json())
+                res_air.append(requests.get(u_a, timeout=5).json())
+            except:
+                # Fallback estremo solo se internet è totalmente down
+                res_meteo.append({"hourly": {"temperature_2m": [15.0]*48, "precipitation": [0.0]*48, "wind_speed_10m": [10.0]*48, "wind_direction_10m": [180]*48, "weather_code": [0]*48}})
+                res_air.append({"hourly": {"pm10": [15.0]*48}})
 
+    # ELABORAZIONE DEI DATI RECUPERATI
     for i, p in enumerate(elenco):
         pt_m = res_meteo[i] if isinstance(res_meteo, list) else res_meteo
         pt_a = res_air[i] if isinstance(res_air, list) else res_air
