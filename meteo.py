@@ -318,11 +318,40 @@ setTimeout(() => {{ aggiornaMappaEInvolucri('pioggia'); }}, 300);
 """
 map_italia.get_root().html.add_child(folium.Element(interfaccia_custom_html))
 
+# CODE CRASH: FORZATURA ASSOLUTA VIA JAVASCRIPT
 branding_html = (
-    f'<div style="position: fixed; bottom: 20px; right: 20px; width: 110px; height: auto; background-color: #121c24; border: 2px solid #22313f; border-radius: 8px; padding: 5px; z-index: 9999; box-shadow: 0px 4px 12px rgba(0,0,0,0.4); text-align: center;"><img src="{FILE_LOGO_LOCAL}" style="width: 100%; height: auto; border-radius: 4px; display: block;"></div>'
-    f'<div style="position: fixed; bottom: 20px; left: 420px; background-color: rgba(255,255,255,0.95); padding: 8px 12px; border-radius: 6px; z-index: 9999; font-family: Arial, sans-serif; font-size: 11px; color: #333; line-height: 1.4; border: 2px solid #2c3e50; box-shadow: 0px 2px 8px rgba(0,0,0,0.15);"><b>{COPYRIGHT}</b><br><span style="color:#666;">{FONTE_DATI}</span></div>'
+    f'<script>'
+    f'setTimeout(() => {{'
+    f'  var sidebar = document.getElementById("sidebar-tabelle-mcspark");'
+    f'  if(sidebar) {{'
+    # Questo cancella lo stile vecchio e impone quello nuovo al 100%
+    f'    sidebar.style.setProperty("position", "fixed", "important");'
+    f'    sidebar.style.setProperty("bottom", "20px", "important");'
+    f'    sidebar.style.setProperty("left", "20px", "important");'
+    f'    sidebar.style.setProperty("width", "320px", "important");'
+    f'    sidebar.style.setProperty("height", "300px", "important");'
+    f'    sidebar.style.setProperty("background", "rgba(255, 255, 255, 0.95)", "important");'
+    f'    sidebar.style.setProperty("z-index", "9999", "important");'
+    f'    sidebar.style.setProperty("display", "block", "important");'
+    f'    sidebar.style.setProperty("box-sizing", "border-box", "important");'
+    f'    sidebar.style.setProperty("border", "2px solid #2c3e50", "important");'
+    f'    sidebar.style.setProperty("border-radius", "8px", "important");'
+    
+    # Ci ficchiamo dentro anche il logo nell'angolino come volevamo prima
+    f'    var logoDiv = document.createElement("div");'
+    f'    logoDiv.style = "position: absolute; top: 10px; right: 10px; width: 55px; height: auto; border: 1px solid #2c3e50; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.15);";'
+    f'    logoDiv.innerHTML = "<img src=\'{FILE_LOGO_LOCAL}\' style=\'width:100%; display:block;\'>";'
+    f'    sidebar.appendChild(logoDiv);'
+    f'  }}'
+    f'}}, 200);' # Parte rapidissimo a 200 millisecondi
+    f'</script>'
+    
+    # Barra dei diritti sottile in basso al centro
+    f'<div style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); background-color: rgba(255,255,255,0.9); padding: 4px 10px; border-radius: 4px; z-index: 9999; font-family: Arial, sans-serif; font-size: 10px; color: #333; border: 1px solid #ccc; box-shadow: 0px 2px 5px rgba(0,0,0,0.1); text-align: center; white-space: nowrap;">'
+    f'  <b>{COPYRIGHT}</b> | <span style="color:#666;">{FONTE_DATI}</span>'
+    f'</div>'
 )
 map_italia.get_root().html.add_child(folium.Element(branding_html))
 
 map_italia.save("index.html")
-print("✅ Mappa salvata con successo! File index.html generato.")
+print("✅ Interfaccia forzata via JS applicata con successo!")
