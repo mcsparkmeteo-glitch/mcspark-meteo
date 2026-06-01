@@ -27,6 +27,8 @@ jobs:
         pip install -r requirements.txt
 
     - name: Esegui lo script Meteo
+      env:
+        WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
       run: python meteo.py
 
     - name: Salva e pubblica i cambiamenti su GitHub Pages
