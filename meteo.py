@@ -2,17 +2,23 @@ import os
 import requests
 import folium
 import time
+from datetime import datetime
+import zoneinfo
 from province_italia import PROVINCE_BY_REGIONE, REGIONI_COORDINATE
 
 # ==========================================
-# CONFIGURAZIONE E BRANDING
+# CONFIGURAZIONE, TIMESTAMP E BRANDING
 # ==========================================
 NOME_SITO = "McSpark Meteo"
 COPYRIGHT = f"© 2026 {NOME_SITO} - Tutti i diritti riservati"
 FONTE_DATI = "Dati: WeatherAPI Realtime & Forecast Models (GFS/ECMWF)"
 FILE_LOGO_LOCAL = "unnamed.jpg" 
 
-print("🌊✨ McSpark Meteo: Configurazione ad Iniezione Diretta Pulita...")
+# Calcolo automatico del fuso orario italiano per i server GitHub
+ora_italiana = datetime.now(zoneinfo.ZoneInfo("Europe/Rome"))
+STRINGA_AGGIORNAMENTO = ora_italiana.strftime("Aggiornato il: %d/%m/%Y alle %H:%M")
+
+print(f"🌊✨ McSpark Meteo: Avvio iniezione dati ({STRINGA_AGGIORNAMENTO})...")
 
 # Recupero sicuro della chiave API dai Secrets di GitHub
 API_KEY = os.getenv("WEATHER_API_KEY")
@@ -345,7 +351,7 @@ function aggiornaMappaEInvolucri(valoreFiltro) {{
     document.querySelectorAll('.v-' + valoreFiltro).forEach(el => el.classList.add('v-attivo'));
     
     if(ultimaRegioneAperta) {{
-        moostraRegioneLaterale(ultimaRegioneAperta);
+        mostraRegioneLaterale(ultimaRegioneAperta);
     }}
 }}
 
@@ -358,7 +364,7 @@ setTimeout(() => {{ aggiornaMappaEInvolucri('pioggia'); }}, 300);
 """
 map_italia.get_root().html.add_child(folium.Element(interfaccia_custom_html))
 
-# SPOSTAMENTO LOGO FISSO IN BASSO A DESTRA E DIRITTI AL CENTRO
+# SPOSTAMENTO LOGO FISSO IN BASSO A DESTRA E DIRITTI AL CENTRO CON TIMESTAMPS REALI
 branding_html = (
     f'<script>'
     f'setTimeout(() => {{'
@@ -385,10 +391,10 @@ branding_html = (
     f'</div>'
     
     f'<div style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); background-color: rgba(255,255,255,0.9); padding: 4px 10px; border-radius: 4px; z-index: 9999; font-family: Arial, sans-serif; font-size: 10px; color: #333; border: 1px solid #ccc; box-shadow: 0px 2px 5px rgba(0,0,0,0.1); text-align: center; white-space: nowrap;">'
-    f'  <b>{COPYRIGHT}</b> | <span style="color:#666;">{FONTE_DATI}</span>'
+    f'  <b>{COPYRIGHT}</b> | <span style="color:#666;">{FONTE_DATI}</span> | <span style="color:#005580; font-weight:bold;">{STRINGA_AGGIORNAMENTO}</span>'
     f'</div>'
 )
 map_italia.get_root().html.add_child(folium.Element(branding_html))
 
 map_italia.save("index.html")
-print("✅ Interfaccia completata: dati reali e logo in basso a destra fisso!")
+print(f"✅ Interfaccia completata! Timbro orario inserito: {STRINGA_AGGIORNAMENTO}")
