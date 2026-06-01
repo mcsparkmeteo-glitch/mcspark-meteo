@@ -72,29 +72,28 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
                 res = requests.get(url, timeout=10).json()
                 
                 if "forecast" in res:
-                    # Estrazione pioggia totale prevista nelle 24h (giorno corrente)
-                    base_prec = float(res["forecast"]["forecastday"][0]["day"]["totalprecip_mm"])
+                    # CORREZIONE: Estrazione pioggia totale prevista nelle 24h di DOMANI [1]
+                    base_prec = float(res["forecast"]["forecastday"][1]["day"]["totalprecip_mm"])
                     
-                    # Estrazione temperature orarie strategiche (ore 07:00, 14:00, 22:00)
-                    ore_totali = res["forecast"]["forecastday"][0]["hour"]
+                    # CORREZIONE: Estrazione temperature orarie di DOMANI [1] (ore 07:00, 14:00, 22:00)
+                    ore_totali = res["forecast"]["forecastday"][1]["hour"]
                     base_t7 = float(ore_totali[7]["temp_c"])
                     base_t14 = float(ore_totali[14]["temp_c"])
                     base_t22 = float(ore_totali[22]["temp_c"])
                     
-                    # Vento attuale/medio e direzione
-                    base_wind = float(res["current"]["wind_kph"])
-                    dir_testo = str(res["current"]["wind_dir"])
+                    # Vento medio e direzione (associati al giorno di domani)
+                    base_wind = float(res["forecast"]["forecastday"][1]["day"]["maxwind_kph"])
+                    dir_testo = str(ore_totali[14]["wind_dir"]) # Direzione nel primo pomeriggio di domani
                     
-                    # CORREZIONE AUTOMATICA: Scansioniamo tutte le ore del giorno per cercare temporali previsti
-                    # Codici WeatherAPI per i temporali: 1087 (Vicino), 1273, 1276, 1279, 1282 (Con pioggia/grandine)
+                    # Scansioniamo tutte le ore di domani [1] per cercare i codici temporale
                     codici_temporale = [1087, 1273, 1276, 1279, 1282]
                     for ora in ore_totali:
                         codice_ora = int(ora["condition"]["code"])
                         if codice_ora in codici_temporale:
                             ha_fulmini = True
-                            break # Trovato almeno un temporale nella giornata, possiamo fermare il ciclo per questa provincia
+                            break 
                     
-                    # Qualità dell'aria (PM10)
+                    # Qualità dell'aria (PM10 attuale come riferimento stazionario)
                     if "air_quality" in res["current"] and "pm10" in res["current"]["air_quality"]:
                         base_pm10 = float(res["current"]["air_quality"]["pm10"])
             except Exception as e:
@@ -332,7 +331,7 @@ interfaccia_custom_html = f"""
 var filtroAttuale = 'pioggia';
 var ultimaRegioneAperta = null;
 
-function mostraRegioneLaterale(idRegione) {{
+function muestraRegioneLaterale(idRegione) {{
     ultimaRegioneAperta = idRegione;
     
     document.getElementById('contenitore-vuoto-sidebar').style.display = 'none';
@@ -401,4 +400,4 @@ branding_html = (
 map_italia.get_root().html.add_child(folium.Element(branding_html))
 
 map_italia.save("index.html")
-print(f"✅ Interfaccia completata! Timbro orario inserito: {STRINGA_AGGIORNAMENTO}")
+print(f"✅ Interfaccia completata! Timbro orario inserito su previsioni domani: {STRINGA_AGGIORNAMENTO}")
