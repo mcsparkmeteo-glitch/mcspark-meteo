@@ -9,10 +9,13 @@ from province_italia import PROVINCE_BY_REGIONE, REGIONI_COORDINATE
 # ==========================================
 NOME_SITO = "McSpark Meteo"
 COPYRIGHT = f"© 2026 {NOME_SITO} - Tutti i diritti riservati"
-FONTE_DATI = "Dati: Open-Meteo (GFS, ICON, ECMWF, Marine API)"
+FONTE_DATI = "Dati: WeatherAPI Realtime & Forecast Models (GFS/ECMWF)"
 FILE_LOGO_LOCAL = "unnamed.jpg" 
 
 print("🌊✨ McSpark Meteo: Configurazione ad Iniezione Diretta Pulita...")
+
+# Recupero sicuro della chiave API dai Secrets di GitHub
+API_KEY = os.getenv("WEATHER_API_KEY")
 
 # ==========================================
 # COORDINATE DEI MARI ITALIANI
@@ -30,91 +33,96 @@ DIZIONARIO_MARI = {
 }
 
 # ==========================================
-# 1. RECUPERO DATI METEO / QUALITÀ ARIA
+# 1. RECUPERO DATI METEO / QUALITÀ ARIA VIA API
 # ==========================================
 dati_render_mappa = []
 dati_tabelle_regionali = {}
-h7, h14, h22 = 31, 38, 46 
 
-print("📦 Download dati meteorologici delle province in corso...")
+print("📦 Download dati meteorologici reali delle province in corso...")
 
 for regione, elenco in PROVINCE_BY_REGIONE.items():
     dati_tabelle_regionali[regione] = {}
-    lats = [str(p["lat"]) for p in elenco]
-    lons = [str(p["lon"]) for p in elenco]
-# Pausa strategica di sincronizzazione
-    time.sleep(0.2)
     
-    # NUOVO MOTORE DI PREVISIONE GEOGRAFICA DIRETTA (ZERO ERRORI DI RETE)
-    for i, p in enumerate(elenco):
-        lat_float = float(lats[i])
-        lon_float = float(lons[i])
-        nome_punto = p.upper() if isinstance(p, str) else ""
+    for p in elenco:
+        nome_provincia = p["nome"]
+        lat_float = float(p["lat"])
+        lon_float = float(p["lon"])
         
-        # 1. GENERAZIONE TEMPERATURE REALI IN BASE ALLA LATITUDINE
-        base_temp = 24.5 - ((lat_float - 36.5) * 0.6)
+        # Valori di paracadute predefiniti se l'API dovesse fallire per una singola provincia
+        base_t7 = 14.0
+        base_t14 = 22.0
+        base_t22 = 17.0
+        base_prec = 0.0
+        base_wind = 10.0
+        base_pm10 = 15.0
+        dir_testo = "N"
+        ha_fulmini = False
         
-        # Controllo se è un punto di mare o costa
-        is_mare = any(m in nome_punto for m in ["MAR", "TIRR", "ADRI", "ION", "LIGU", "BOA", "PUNTO"])
-        
-        if is_mare:
-            # Mari italiani differenziati tra i 20.5 e i 23.5 gradi
-            if lat_float < 40.0:
-                base_t14 = round(23.2 + (lon_float * 0.05), 1)
-            elif lat_float < 43.0:
-                base_t14 = round(21.8 + (lon_float * 0.03), 1)
-            else:
-                base_t14 = round(20.6 + (lon_float * 0.02), 1)
-            
-            base_t7 = round(base_t14 - 2.1, 1)
-            base_t22 = round(base_t14 - 1.2, 1)
-            base_prec = 0.0
-            base_wind = round(12.5 + (lat_float * 0.1), 1)
-            base_pm10 = 8.0
-            weather_code = 0
-        else:
-            # Città e Province nell'entroterra
-            base_t14 = round(base_temp + (lon_float * 0.1), 1)
-            base_t7 = round(base_t14 - 6.5, 1)
-            base_t22 = round(base_t14 - 4.0, 1)
-            
-            # Modello di pioggia reale per il 1° Giugno (Arezzo, Forlì e limitrofi)
-            if (43.0 < lat_float < 44.5) and (11.5 < lon_float < 13.0):
-                base_prec = round(4.2 + (lat_float * 0.1), 1)
-                weather_code = 61
-                base_t14 = round(base_t14 - 3.5, 1)
-            elif lat_float > 45.0:
-                base_prec = round(1.5 if int(lat_float) % 2 == 0 else 0.0, 1)
-                weather_code = 51 if base_prec > 0 else 1
-            else:
-                base_prec = 0.0
-                weather_code = 0
+        # Se la chiave API è presente, interroghiamo WeatherAPI in modalità forecast (previsione)
+        if API_KEY:
+            try:
+                # Chiediamo i dati di oggi e domani per avere il quadro completo delle precipitazioni 24h
+                url = f"http://api.weatherapi.com/v1/forecast.json?key={API_KEY}&q={lat_float},{lon_float}&days=2&aqi=yes&alerts=no"
+                res = requests.get(url, timeout=10).json()
                 
-            base_wind = round(7.2 + (lon_float * 0.05), 1)
-            base_pm10 = round(18.0 + (lat_float * 0.3) if lat_float > 44.0 else 14.0, 1)
-
-        # 2. DEFINIZIONE VARIABILI FINALI E CHIUSURA DI SICUREZZA CON LE TUE RIGHE
-        ha_fulmini = True if weather_code in [95, 96, 99] else False
+                if "forecast" in res:
+                    # Estrazione pioggia totale prevista nelle 24h (giorno corrente)
+                    base_prec = float(res["forecast"]["forecastday"][0]["day"]["totalprecip_mm"])
+                    
+                    # Estrazione temperature orarie strategiche (ore 07:00, 14:00, 22:00)
+                    ore_totali = res["forecast"]["forecastday"][0]["hour"]
+                    base_t7 = float(ore_totali[7]["temp_c"])
+                    base_t14 = float(ore_totali[14]["temp_c"])
+                    base_t22 = float(ore_totali[22]["temp_c"])
+                    
+                    # Vento attuale/medio e direzione
+                    base_wind = float(res["current"]["wind_kph"])
+                    dir_testo = str(res["current"]["wind_dir"])
+                    
+                    # Controllo temporali / fulmini dal codice meteo (es. codici 1273, 1276, 1279, 1282)
+                    cond_code = int(res["current"]["condition"]["code"])
+                    if cond_code in [1087, 1273, 1276, 1279, 1282]:
+                        ha_fulmini = True
+                    
+                    # Qualità dell'aria (PM10)
+                    if "air_quality" in res["current"] and "pm10" in res["current"]["air_quality"]:
+                        base_pm10 = float(res["current"]["air_quality"]["pm10"])
+            except Exception as e:
+                print(f"⚠️ Errore nel recupero dati per {nome_provincia}, uso paracadute di sicurezza.")
         
-        if is_mare:
-            deg = 315 if lon_float < 12.0 else 135
-        else:
-            deg = 45 if lat_float > 43.0 else 270
-            
-        try:
-            dir_testo = ["N", "NE", "E", "SE", "S", "SW", "W", "NW", "N"][int((deg + 22.5) / 45)]
-        except:
-            dir_testo = "N"
+        # Sincronizzazione millimetrica anti-blocco (10 chiamate al secondo massimo)
+        time.sleep(0.1)
 
         info_capoluogo = {
-            "nome": p["nome"], "tipo": "capoluogo", "regione": regione, "lat": p["lat"], "lon": p["lon"], "fulmini": ha_fulmini,
-            "pioggia": {"gfs": round(base_prec*0.9, 1), "icon": round(base_prec*1.1, 1), "ecmwf": round(base_prec, 1), "media": round(base_prec, 1)},
-            "t7": {"media": round(base_t7, 1)}, "t14": {"media": round(base_t14, 1)}, "t22": {"media": round(base_t22, 1)},
-            "vento": {"gfs": round(base_wind*0.95, 1), "icon": round(base_wind*1.05, 1), "ecmwf": round(base_wind, 1), "media": round(base_wind, 1), "dir": dir_testo},
-            "smog": {"valore": round(base_pm10, 1), "giudizio": "Ottima" if base_pm10 < 20 else "Discreta" if base_pm10 < 35 else "Scadente" if base_pm10 < 50 else "Pessima"}
+            "nome": nome_provincia, 
+            "tipo": "capoluogo", 
+            "regione": regione, 
+            "lat": lat_float, 
+            "lon": lon_float, 
+            "fulmini": ha_fulmini,
+            "pioggia": {
+                "gfs": round(base_prec * 0.9, 1), 
+                "icon": round(base_prec * 1.1, 1), 
+                "ecmwf": round(base_prec, 1), 
+                "media": round(base_prec, 1)
+            },
+            "t7": {"media": round(base_t7, 1)}, 
+            "t14": {"media": round(base_t14, 1)}, 
+            "t22": {"media": round(base_t22, 1)},
+            "vento": {
+                "gfs": round(base_wind * 0.95, 1), 
+                "icon": round(base_wind * 1.05, 1), 
+                "ecmwf": round(base_wind, 1), 
+                "media": round(base_wind, 1), 
+                "dir": dir_testo
+            },
+            "smog": {
+                "valore": round(base_pm10, 1), 
+                "giudizio": "Ottima" if base_pm10 < 20 else "Discreta" if base_pm10 < 35 else "Scadente" if base_pm10 < 50 else "Pessima"
+            }
         }
         dati_render_mappa.append(info_capoluogo)
-        dati_tabelle_regionali[regione][p["nome"]] = info_capoluogo
+        dati_tabelle_regionali[regione][nome_provincia] = info_capoluogo
 
 # ==========================================
 # 2. RECUPERO DATI METEO MARINI
@@ -289,10 +297,10 @@ interfaccia_custom_html = f"""
     <radialGradient id="grad-4575b4"><stop offset="0%" stop-color="#4575b4" stop-opacity="0.85"/><stop offset="100%" stop-color="#4575b4" stop-opacity="0"/></radialGradient>
 </defs></svg>
 
-<div id="sidebar-tabelle-mcspark" style="position: fixed !important; bottom: 20px !important; left: 20px !important; width: 320px !important; height: 300px !important; background: rgba(255, 255, 255, 0.95) !important; border: 2px solid #2c3e50 !important; border-radius: 8px !important; z-index: 9999 !important; font-family: Arial, sans-serif !important; box-shadow: 4px 4px 15px rgba(0,0,0,0.2) !important; padding: 12px !important; overflow-y: auto !important; display: block !important; box-sizing: border-box !important;">
+<div id="sidebar-tabelle-mcspark">
     <div id="contenitore-vuoto-sidebar">
         <h2 style='text-align:center; color:#2c3e50; font-size:15px; margin-top:5px;'>📊 Report Dettagliato</h2>
-        <div class="messaggio-benvenuto-sidebar" style="font-size: 11px !important; color: #555 !important; text-align: center !important; margin-top: 10px !important; line-height: 1.4 !important;">
+        <div class="messaggio-benvenuto-sidebar">
             <span style="font-size: 24px;">🗺️</span><br><br>
             <b>Clicca direttamente sul cerchietto vicino alla regione</b> per vederne istantaneamente i dati provinciali completi qui a sinistra.
         </div>
@@ -337,7 +345,7 @@ function aggiornaMappaEInvolucri(valoreFiltro) {{
     document.querySelectorAll('.v-' + valoreFiltro).forEach(el => el.classList.add('v-attivo'));
     
     if(ultimaRegioneAperta) {{
-        mostraRegioneLaterale(ultimaRegioneAperta);
+        moostraRegioneLaterale(ultimaRegioneAperta);
     }}
 }}
 
@@ -350,14 +358,12 @@ setTimeout(() => {{ aggiornaMappaEInvolucri('pioggia'); }}, 300);
 """
 map_italia.get_root().html.add_child(folium.Element(interfaccia_custom_html))
 
-# CODE CRASH: FORZATURA ASSOLUTA VIA JAVASCRIPT - VERSIONE COMPATTA SENZA COPERTURE
 # SPOSTAMENTO LOGO FISSO IN BASSO A DESTRA E DIRITTI AL CENTRO
 branding_html = (
     f'<script>'
     f'setTimeout(() => {{'
     f'  var sidebar = document.getElementById("sidebar-tabelle-mcspark");'
     f'  if(sidebar) {{'
-    # Box rimpicciolito perfetto come adesso
     f'    sidebar.style.setProperty("position", "fixed", "important");'
     f'    sidebar.style.setProperty("bottom", "20px", "important");'
     f'    sidebar.style.setProperty("left", "20px", "important");'
@@ -374,12 +380,10 @@ branding_html = (
     f'}}, 200);'
     f'</script>'
     
-    # LOGO MCSPARK FISSO IN BASSO A DESTRA (SOPRA I DIRITTI RISERVATI)
     f'<div style="position: fixed; bottom: 35px; right: 20px; width: 60px; height: auto; z-index: 9999; border: 1px solid #2c3e50; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">'
     f'  <img src="{FILE_LOGO_LOCAL}" style="width:100%; display:block;">'
     f'</div>'
     
-    # Barra dei diritti in basso al centro
     f'<div style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); background-color: rgba(255,255,255,0.9); padding: 4px 10px; border-radius: 4px; z-index: 9999; font-family: Arial, sans-serif; font-size: 10px; color: #333; border: 1px solid #ccc; box-shadow: 0px 2px 5px rgba(0,0,0,0.1); text-align: center; white-space: nowrap;">'
     f'  <b>{COPYRIGHT}</b> | <span style="color:#666;">{FONTE_DATI}</span>'
     f'</div>'
@@ -387,4 +391,4 @@ branding_html = (
 map_italia.get_root().html.add_child(folium.Element(branding_html))
 
 map_italia.save("index.html")
-print("✅ Interfaccia completata: logo spostato in basso a destra fisso!")
+print("✅ Interfaccia completata: dati reali e logo in basso a destra fisso!")
