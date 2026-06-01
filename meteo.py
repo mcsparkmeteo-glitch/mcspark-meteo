@@ -67,7 +67,7 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
         # Se la chiave API è presente, interroghiamo WeatherAPI in modalità forecast (previsione)
         if API_KEY:
             try:
-                # Chiediamo i dati di oggi e domani per avere il quadro completo delle precipitazioni 24h
+                # Chiediamo i dati di oggi e domani per avere il quadro completo delle previsioni 24h
                 url = f"http://api.weatherapi.com/v1/forecast.json?key={API_KEY}&q={lat_float},{lon_float}&days=2&aqi=yes&alerts=no"
                 res = requests.get(url, timeout=10).json()
                 
@@ -85,10 +85,14 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
                     base_wind = float(res["current"]["wind_kph"])
                     dir_testo = str(res["current"]["wind_dir"])
                     
-                    # Controllo temporali / fulmini dal codice meteo (es. codici 1273, 1276, 1279, 1282)
-                    cond_code = int(res["current"]["condition"]["code"])
-                    if cond_code in [1087, 1273, 1276, 1279, 1282]:
-                        ha_fulmini = True
+                    # CORREZIONE AUTOMATICA: Scansioniamo tutte le ore del giorno per cercare temporali previsti
+                    # Codici WeatherAPI per i temporali: 1087 (Vicino), 1273, 1276, 1279, 1282 (Con pioggia/grandine)
+                    codici_temporale = [1087, 1273, 1276, 1279, 1282]
+                    for ora in ore_totali:
+                        codice_ora = int(ora["condition"]["code"])
+                        if codice_ora in codici_temporale:
+                            ha_fulmini = True
+                            break # Trovato almeno un temporale nella giornata, possiamo fermare il ciclo per questa provincia
                     
                     # Qualità dell'aria (PM10)
                     if "air_quality" in res["current"] and "pm10" in res["current"]["air_quality"]:
