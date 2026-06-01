@@ -39,7 +39,7 @@ DIZIONARIO_MARI = {
 }
 
 # ==========================================
-# 1. RECUPERO DATI METEO / QUALITÀ ARIA VIA API
+# 1. RECUPERO DATI METEO VIA API
 # ==========================================
 dati_render_mappa = []
 dati_tabelle_regionali = {}
@@ -54,7 +54,6 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
         lat_float = float(p["lat"])
         lon_float = float(p["lon"])
         
-        # Valori di paracadute predefiniti se l'API dovesse fallire per una singola provincia
         base_t7 = 14.0
         base_t14 = 22.0
         base_t22 = 17.0
@@ -64,28 +63,22 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
         dir_testo = "N"
         ha_fulmini = False
         
-        # Se la chiave API è presente, interroghiamo WeatherAPI in modalità forecast (previsione)
         if API_KEY:
             try:
-                # Chiediamo i dati di oggi e domani per avere il quadro completo delle previsioni 24h
                 url = f"http://api.weatherapi.com/v1/forecast.json?key={API_KEY}&q={lat_float},{lon_float}&days=2&aqi=yes&alerts=no"
                 res = requests.get(url, timeout=10).json()
                 
                 if "forecast" in res:
-                    # Estrazione pioggia totale prevista nelle 24h di DOMANI [1]
                     base_prec = float(res["forecast"]["forecastday"][1]["day"]["totalprecip_mm"])
                     
-                    # Estrazione temperature orarie di DOMANI [1] (ore 07:00, 14:00, 22:00)
                     ore_totali = res["forecast"]["forecastday"][1]["hour"]
                     base_t7 = float(ore_totali[7]["temp_c"])
                     base_t14 = float(ore_totali[14]["temp_c"])
                     base_t22 = float(ore_totali[22]["temp_c"])
                     
-                    # Vento medio e direzione (associati al giorno di domani)
                     base_wind = float(res["forecast"]["forecastday"][1]["day"]["maxwind_kph"])
-                    dir_testo = str(ore_totali[14]["wind_dir"]) # Direzione nel primo pomeriggio di domani
+                    dir_testo = str(ore_totali[14]["wind_dir"])
                     
-                    # Scansioniamo tutte le ore di domani [1] per cercare i codici temporale
                     codici_temporale = [1087, 1273, 1276, 1279, 1282]
                     for ora in ore_totali:
                         codice_ora = int(ora["condition"]["code"])
@@ -93,13 +86,11 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
                             ha_fulmini = True
                             break 
                     
-                    # Qualità dell'aria (PM10 attuale come riferimento stazionario)
                     if "air_quality" in res["current"] and "pm10" in res["current"]["air_quality"]:
                         base_pm10 = float(res["current"]["air_quality"]["pm10"])
             except Exception as e:
-                print(f"⚠️ Errore nel recupero dati per {nome_provincia}, uso paracadute di sicurezza.")
+                print(f"⚠️ Errore nel recupero dati per {nome_provincia}, uso paracadute.")
         
-        # Sincronizzazione millimetrica anti-blocco (10 chiamate al secondo massimo)
         time.sleep(0.1)
 
         info_capoluogo = {
@@ -212,8 +203,9 @@ for d in dati_render_mappa:
 # COMPILAZIONE SIDEBAR LATERALE
 blocchi_html_tabelle = ""
 for r_nome in REGIONI_COORDINATE.keys():
+    id_div_regione = r_nome.replace(" ", "-").replace("'", "-")
     blocchi_html_tabelle += f"""
-    <div id='box-regione-{r_nome.replace(" ", "-").replace("'", "-")}' class='gruppo-regione-tabella' style='display:none;'>
+    <div id="box-regione-{id_div_regione}" class="gruppo-regione-tabella" style="display:none;">
         {tabella_regionale_pioggia(r_nome)}
         {tabella_regionale_temperatura(r_nome)}
         {tabella_regionale_vento(r_nome)}
@@ -221,7 +213,7 @@ for r_nome in REGIONI_COORDINATE.keys():
     </div>
     """
 
-# INIEZIONE DI INDICATORI CLICCABILI (CON CHIAMATA JAVASCRIPT CORRETTA)
+# INIEZIONE DI INDICATORI CLICCABILI NATIVI CORAZZATI
 for r_nome, coord in REGIONI_COORDINATE.items():
     id_pulito = r_nome.replace(" ", "-").replace("'", "-")
     
@@ -229,7 +221,7 @@ for r_nome, coord in REGIONI_COORDINATE.items():
     <div onclick="mostraRegioneLaterale('{id_pulito}')" title="{r_nome}"
          style="width: 24px; height: 24px; background-color: white; border: 3px solid #2c3e50; 
                 border-radius: 50%; cursor: pointer; box-shadow: 0px 2px 6px rgba(0,0,0,0.3);
-                transform: translate(-12px, -12px);">
+                transform: translate(-12px, -12px); z-index: 99999;">
     </div>
     """
     
@@ -247,21 +239,21 @@ for mare in dati_mari_render:
     folium.Marker(location=[mare["lat"], mare["lon"]], icon=folium.DivIcon(html=f"<div style='font-family: Arial, sans-serif; font-size: 11px; text-align: center; font-weight: bold; color: #003366; text-shadow: 1px 1px 2px white;'><span style='font-size:16px;'>{mare['icona']}</span><br>🌡️ {mare['temp']}°C</div>"), popup=folium.Popup(popup_html, max_width=220)).add_to(map_italia)
 
 # ==========================================
-# 6. INTERFACCIA E REGOLE JAVASCRIPT CORAZZATE
+# 6. INTERFACCIA E CODICE JAVASCRIPT CORAZZATO (SENZA CONFLITTI DI SINTASSI PYTHON)
 # ==========================================
-interfaccia_custom_html = f"""
+interfaccia_custom_html = """
 <style>
-    .v-filtro {{ opacity: 0 !important; pointer-events: none !important; transition: opacity 0.2s ease; }}
-    .v-attivo {{ opacity: 0.7 !important; pointer-events: auto !important; }}
+    .v-filtro { opacity: 0 !important; pointer-events: none !important; transition: opacity 0.2s ease; }
+    .v-attivo { opacity: 0.7 !important; pointer-events: auto !important; }
     
-    .sfumatura-a1dab4 {{ fill: url(#grad-a1dab4) !important; }} .sfumatura-41b6c4 {{ fill: url(#grad-41b6c4) !important; }}
-    .sfumatura-225ea8 {{ fill: url(#grad-225ea8) !important; }} .sfumatura-001d58 {{ fill: url(#grad-001d58) !important; }}
-    .sfumatura-1a9850 {{ fill: url(#grad-1a9850) !important; }} .sfumatura-fee08b {{ fill: url(#grad-fee08b) !important; }}
-    .sfumatura-f46d43 {{ fill: url(#grad-f46d43) !important; }} .sfumatura-d73027 {{ fill: url(#grad-d73027) !important; }}
-    .sfumatura-e0f3f8 {{ fill: url(#grad-e0f3f8) !important; }} .sfumatura-fee090 {{ fill: url(#grad-fee090) !important; }}
-    .sfumatura-66bd63 {{ fill: url(#grad-66bd63) !important; }} .sfumatura-4575b4 {{ fill: url(#grad-4575b4) !important; }}
+    .sfumatura-a1dab4 { fill: url(#grad-a1dab4) !important; } .sfumatura-41b6c4 { fill: url(#grad-41b6c4) !important; }
+    .sfumatura-225ea8 { fill: url(#grad-225ea8) !important; } .sfumatura-001d58 { fill: url(#grad-001d58) !important; }
+    .sfumatura-1a9850 { fill: url(#grad-1a9850) !important; } .sfumatura-fee08b { fill: url(#grad-fee08b) !important; }
+    .sfumatura-f46d43 { fill: url(#grad-f46d43) !important; } .sfumatura-d73027 { fill: url(#grad-d73027) !important; }
+    .sfumatura-e0f3f8 { fill: url(#grad-e0f3f8) !important; } .sfumatura-fee090 { fill: url(#grad-fee090) !important; }
+    .sfumatura-66bd63 { fill: url(#grad-66bd63) !important; } .sfumatura-4575b4 { fill: url(#grad-4575b4) !important; }
     
-    #sidebar-tabelle-mcspark {{
+    #sidebar-tabelle-mcspark {
         position: fixed !important; 
         bottom: 20px !important; 
         left: 20px !important; 
@@ -277,18 +269,18 @@ interfaccia_custom_html = f"""
         overflow-y: auto !important; 
         display: block !important; 
         box-sizing: border-box !important;
-    }}
-    .messaggio-benvenuto-sidebar {{ 
+    }
+    .messaggio-benvenuto-sidebar { 
         font-size: 11px !important; 
         color: #555 !important; 
         text-align: center !important; 
         margin-top: 15px !important; 
         line-height: 1.4 !important; 
-    }}
+    }
     
-    #pannello-meteo-pulsanti {{ position: fixed; top: 20px; right: 20px; background: white; padding: 12px; border: 2px solid #2c3e50; border-radius: 8px; z-index: 9999; font-family: Arial, sans-serif; box-shadow: 0px 4px 10px rgba(0,0,0,0.15); width: 220px; }}
-    #pannello-meteo-pulsanti h4 {{ margin: 0 0 10px 0; font-size: 13px; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; text-align: center;}}
-    .opzione-radio {{ display: block; margin-bottom: 8px; cursor: pointer; font-size: 12px; font-weight: bold; color: #333; }}
+    #pannello-meteo-pulsanti { position: fixed; top: 20px; right: 20px; background: white; padding: 12px; border: 2px solid #2c3e50; border-radius: 8px; z-index: 9999; font-family: Arial, sans-serif; box-shadow: 0px 4px 10px rgba(0,0,0,0.15); width: 220px; }
+    #pannello-meteo-pulsanti h4 { margin: 0 0 10px 0; font-size: 13px; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; text-align: center;}
+    .opzione-radio { display: block; margin-bottom: 8px; cursor: pointer; font-size: 12px; font-weight: bold; color: #333; }
 </style>
 
 <svg width="0" height="0"><defs>
@@ -315,7 +307,7 @@ interfaccia_custom_html = f"""
         </div>
     </div>
     <div id="contenitore-tabelle-attive-sidebar" style="display:none;">
-        {blocchi_html_tabelle}
+""" + blocchi_html_tabelle + """
     </div>
 </div>
 
@@ -331,39 +323,59 @@ interfaccia_custom_html = f"""
 var filtroAttuale = 'pioggia';
 var ultimaRegioneAperta = null;
 
-// CORREZIONE UNIFORMATA DELLA FUNZIONE DI APERTURA
-function mostraRegioneLaterale(idRegione) {{
+function mostraRegioneLaterale(idRegione) {
     ultimaRegioneAperta = idRegione;
     
     document.getElementById('contenitore-vuoto-sidebar').style.display = 'none';
     document.getElementById('contenitore-tabelle-attive-sidebar').style.display = 'block';
     
-    document.querySelectorAll('.gruppo-regione-tabella').forEach(el => el.style.display = 'none');
+    var tuttiIBox = document.getElementsByClassName('gruppo-regione-tabella');
+    for (var i = 0; i < tuttiIBox.length; i++) {
+        tuttiIBox[i].style.display = 'none';
+    }
     
     var boxAttivo = document.getElementById('box-regione-' + idRegione);
-    if(boxAttivo) {{
+    if(boxAttivo) {
         boxAttivo.style.display = 'block';
-        boxAttivo.querySelectorAll('.scheda-meteo').forEach(el => el.style.display = 'none');
-        boxAttivo.querySelectorAll('.s-' + filtroAttuale).forEach(el => el.style.display = 'block');
-    }}
-}}
+        
+        var tutteLeSchede = boxAttivo.getElementsByClassName('scheda-meteo');
+        for (var j = 0; j < tutteLeSchede.length; j++) {
+            tutteLeSchede[j].style.display = 'none';
+        }
+        
+        var schedeDaMostrare = boxAttivo.getElementsByClassName('s-' + filtroAttuale);
+        for (var k = 0; k < schedeDaMostrare.length; k++) {
+            schedeDaMostrare[k].style.display = 'block';
+        }
+    }
+}
 
-function aggiornaMappaEInvolucri(valoreFiltro) {{
+function aggiornaMappaEInvolucri(valoreFiltro) {
     filtroAttuale = valoreFiltro;
     
-    document.querySelectorAll('.v-filtro').forEach(el => el.classList.remove('v-attivo'));
-    document.querySelectorAll('.v-' + valoreFiltro).forEach(el => el.classList.add('v-attivo'));
+    var tuttiIFiltri = document.getElementsByClassName('v-filtro');
+    for (var i = 0; i < tuttiIFiltri.length; i++) {
+        tuttiIFiltri[i].classList.remove('v-attivo');
+    }
     
-    if(ultimaRegioneAperta) {{
+    var filtriDaAttivare = document.getElementsByClassName('v-' + valoreFiltro);
+    for (var j = 0; j < filtriDaAttivare.length; j++) {
+        filtriDaAttivare[j].classList.add('v-attivo');
+    }
+    
+    if(ultimaRegioneAperta) {
         mostraRegioneLaterale(ultimaRegioneAperta);
-    }}
-}}
+    }
+}
 
-document.querySelectorAll('input[name="filtro-global"]').forEach(r => r.addEventListener('change', e => {{
-    aggiornaMappaEInvolucri(e.target.value);
-}}));
+var radioButtons = document.getElementsByName('filtro-global');
+for (var i = 0; i < radioButtons.length; i++) {
+    radioButtons[i].addEventListener('change', function(e) {
+        aggiornaMappaEInvolucri(e.target.value);
+    });
+}
 
-setTimeout(() => {{ aggiornaMappaEInvolucri('pioggia'); }}, 300);
+setTimeout(function() { aggiornaMappaEInvolucri('pioggia'); }, 300);
 </script>
 """
 map_italia.get_root().html.add_child(folium.Element(interfaccia_custom_html))
@@ -381,4 +393,4 @@ branding_html = (
 map_italia.get_root().html.add_child(folium.Element(branding_html))
 
 map_italia.save("index.html")
-print(f"✅ Interfaccia ripristinata e corretta: {STRINGA_AGGIORNAMENTO}")
+print(f"✅ Interfaccia completata in modo nativo e sicuro: {STRINGA_AGGIORNAMENTO}")
