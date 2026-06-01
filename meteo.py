@@ -72,10 +72,10 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
                 res = requests.get(url, timeout=10).json()
                 
                 if "forecast" in res:
-                    # CORREZIONE: Estrazione pioggia totale prevista nelle 24h di DOMANI [1]
+                    # Estrazione pioggia totale prevista nelle 24h di DOMANI [1]
                     base_prec = float(res["forecast"]["forecastday"][1]["day"]["totalprecip_mm"])
                     
-                    # CORREZIONE: Estrazione temperature orarie di DOMANI [1] (ore 07:00, 14:00, 22:00)
+                    # Estrazione temperature orarie di DOMANI [1] (ore 07:00, 14:00, 22:00)
                     ore_totali = res["forecast"]["forecastday"][1]["hour"]
                     base_t7 = float(ore_totali[7]["temp_c"])
                     base_t14 = float(ore_totali[14]["temp_c"])
@@ -221,7 +221,7 @@ for r_nome in REGIONI_COORDINATE.keys():
     </div>
     """
 
-# INIEZIONE DI INDICATORI CLICCABILI (SENZA POPUP INTERNI BLOCCANTI)
+# INIEZIONE DI INDICATORI CLICCABILI (CON CHIAMATA JAVASCRIPT CORRETTA)
 for r_nome, coord in REGIONI_COORDINATE.items():
     id_pulito = r_nome.replace(" ", "-").replace("'", "-")
     
@@ -331,7 +331,8 @@ interfaccia_custom_html = f"""
 var filtroAttuale = 'pioggia';
 var ultimaRegioneAperta = null;
 
-function muestraRegioneLaterale(idRegione) {{
+// CORREZIONE UNIFORMATA DELLA FUNZIONE DI APERTURA
+function mostraRegioneLaterale(idRegione) {{
     ultimaRegioneAperta = idRegione;
     
     document.getElementById('contenitore-vuoto-sidebar').style.display = 'none';
@@ -367,28 +368,8 @@ setTimeout(() => {{ aggiornaMappaEInvolucri('pioggia'); }}, 300);
 """
 map_italia.get_root().html.add_child(folium.Element(interfaccia_custom_html))
 
-# SPOSTAMENTO LOGO FISSO IN BASSO A DESTRA E DIRITTI AL CENTRO CON TIMESTAMPS REALI
+# LOGO E DIRITTI CON TIMESTAMPS
 branding_html = (
-    f'<script>'
-    f'setTimeout(() => {{'
-    f'  var sidebar = document.getElementById("sidebar-tabelle-mcspark");'
-    f'  if(sidebar) {{'
-    f'    sidebar.style.setProperty("position", "fixed", "important");'
-    f'    sidebar.style.setProperty("bottom", "20px", "important");'
-    f'    sidebar.style.setProperty("left", "20px", "important");'
-    f'    sidebar.style.setProperty("width", "290px", "important");'
-    f'    sidebar.style.setProperty("height", "210px", "important");'
-    f'    sidebar.style.setProperty("background", "rgba(255, 255, 255, 0.95)", "important");'
-    f'    sidebar.style.setProperty("z-index", "9999", "important");'
-    f'    sidebar.style.setProperty("display", "block", "important");'
-    f'    sidebar.style.setProperty("box-sizing", "border-box", "important");'
-    f'    sidebar.style.setProperty("border", "2px solid #2c3e50", "important");'
-    f'    sidebar.style.setProperty("border-radius", "8px", "important");'
-    f'    sidebar.style.setProperty("padding", "8px", "important");'
-    f'  }}'
-    f'}}, 200);'
-    f'</script>'
-    
     f'<div style="position: fixed; bottom: 35px; right: 20px; width: 60px; height: auto; z-index: 9999; border: 1px solid #2c3e50; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">'
     f'  <img src="{FILE_LOGO_LOCAL}" style="width:100%; display:block;">'
     f'</div>'
@@ -400,4 +381,4 @@ branding_html = (
 map_italia.get_root().html.add_child(folium.Element(branding_html))
 
 map_italia.save("index.html")
-print(f"✅ Interfaccia completata! Timbro orario inserito su previsioni domani: {STRINGA_AGGIORNAMENTO}")
+print(f"✅ Interfaccia ripristinata e corretta: {STRINGA_AGGIORNAMENTO}")
