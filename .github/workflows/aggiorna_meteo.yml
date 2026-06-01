@@ -1,9 +1,16 @@
 name: Aggiornamento Automatico McSpark Meteo
 
 on:
+  push:
+    branches:
+      - main
   schedule:
     - cron: '0 4,10,18 * * *'
   workflow_dispatch:
+
+# DA QUI IN POI LASCIA TUTTO IDENTICO A COME CE L'HAI GIÀ:
+jobs:
+  ...
 
 jobs:
   build:
