@@ -391,6 +391,6 @@ branding_html = (
     f'</div>'
 )
 map_italia.get_root().html.add_child(folium.Element(branding_html))
-
+map_italia.fit_bounds([[36.0, 6.0], [47.5, 18.5]])
 map_italia.save("index.html")
 print(f"✅ Interfaccia completata in modo nativo e sicuro: {STRINGA_AGGIORNAMENTO}")
