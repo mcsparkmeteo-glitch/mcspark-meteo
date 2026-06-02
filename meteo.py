@@ -421,7 +421,8 @@ stile_smartphone = """
 </style>
 """
 map_italia.get_root().header.add_child(folium.Element(stile_smartphone))
-
+# Dice al browser dello smartphone di non ingrandire a caso, ma di usare la scala reale 1:1
+map_italia.get_root().header.add_child(folium.Element('<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />'))
 map_italia.save("index.html")
 
 print(f"✅ Interfaccia completata in modo nativo e sicuro: {STRINGA_AGGIORNAMENTO}")
