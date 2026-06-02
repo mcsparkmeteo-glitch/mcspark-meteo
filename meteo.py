@@ -253,20 +253,21 @@ interfaccia_custom_html = """
     .sfumatura-e0f3f8 { fill: url(#grad-e0f3f8) !important; } .sfumatura-fee090 { fill: url(#grad-fee090) !important; }
     .sfumatura-66bd63 { fill: url(#grad-66bd63) !important; } .sfumatura-4575b4 { fill: url(#grad-4575b4) !important; }
     
-    #sidebar-tabelle-mcspark {
-        position: fixed !important; 
-        bottom: 0 !important; 
-        left: 0 !important; 
-        width: 100% !important; 
-        height: 180px !important; 
-        background: rgba(255, 255, 255, 0.98) !important; 
-        border-top: 3px solid #2c3e50 !important; 
-        z-index: 99999 !important; 
-        font-family: Arial, sans-serif !important; 
-        box-shadow: 0px -4px 15px rgba(0,0,0,0.2) !important;
-        padding: 8px !important; 
-        overflow-y: auto !important; 
-        display: block !important; 
+   #sidebar-tabelle-mcspark {
+        position: fixed !important;
+        bottom: 20px !important;
+        left: 20px !important;
+        width: 320px !important;
+        height: 300px !important;
+        background: rgba(255, 255, 255, 0.95) !important;
+        border: 2px solid #2c3e50 !important;
+        border-radius: 8px !important;
+        z-index: 9999 !important;
+        font-family: Arial, sans-serif !important;
+        box-shadow: 4px 4px 15px rgba(0,0,0,0.2) !important;
+        padding: 12px !important;
+        overflow-y: auto !important;
+        display: block !important;
         box-sizing: border-box !important;
     }
     .messaggio-benvenuto-sidebar { 
@@ -277,35 +278,9 @@ interfaccia_custom_html = """
         line-height: 1.4 !important; 
     }
     
-   #pannello-meteo-pulsanti {
-        position: fixed !important;
-        top: 5px !important;
-        right: 5px !important;
-        width: 150px !important;
-        padding: 6px !important;
-        background: rgba(255, 255, 255, 0.95) !important;
-        border: 2px solid #2c3e50 !important;
-        border-radius: 6px !important;
-        z-index: 99999 !important;
-    }
-    #pannello-meteo-pulsanti h4 { 
-        font-size: 11px !important; 
-        margin: 0 0 4px 0 !important; 
-        color: #2c3e50 !important;
-        border-bottom: 2px solid #2c3e50 !important;
-        padding-bottom: 3px !important;
-    }
-    .opzione-radio { 
-        display: block !important;
-        font-size: 10px !important; 
-        margin-bottom: 3px !important; 
-        cursor: pointer !important;
-        font-weight: bold !important;
-        color: #333 !important;
-    }
-    .opzione-radio input { 
-        transform: scale(0.8) !important; 
-    }
+ #pannello-meteo-pulsanti { position: fixed; top: 20px; right: 20px; background: white; padding: 12px; border: 2px solid #2c3e50; border-radius: 8px; z-index: 9999; font-family: Arial, sans-serif; box-shadow: 4px 4px 15px rgba(0,0,0,0.2); width: 320px; box-sizing: border-box; }
+    #pannello-meteo-pulsanti h4 { margin: 0 0 10px 0; font-size: 13px; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; text-align: center; font-weight: bold; }
+    .opzione-radio { display: block; margin-bottom: 8px; cursor: pointer; font-size: 12px; font-weight: bold; color: #333; }
 </style>
 
 <svg width="0" height="0"><defs>
@@ -439,15 +414,15 @@ stile_smartphone = """
         padding: 5px !important;
         z-index: 99999 !important;
     }
-    #pannello-meteo-pulsanti h4 { font-size: 11px !important; margin: 0 0 4px 0 !important; }
-    .opzione-radio { font-size: 10px !important; margin-bottom: 3px !important; }
-    .opzione-radio input { transform: scale(0.85) !important; }
-}
+   .opzione-radio { display: block; margin-bottom: 8px; cursor: pointer; font-size: 12px; font-weight: bold; color: #333; }
 </style>
 """
-map_italia.get_root().header.add_child(folium.Element(stile_smartphone))
-# Dice al browser dello smartphone di non ingrandire a caso, ma di usare la scala reale 1:1
-map_italia.get_root().header.add_child(folium.Element('<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />'))
+
+map_italia.get_root().html.add_child(folium.Element(branding_html))
+
+# Costringe la mappa a inquadrare l'Italia intera
+map_italia.fit_bounds([[36.0, 6.0], [47.5, 18.5]])
+
 map_italia.save("index.html")
 
-print(f"✅ Interfaccia completata in modo nativo e sicuro: {STRINGA_AGGIORNAMENTO}")
+print(f"✅ Interfaccia completata in modo nativo e sicuro: {STRINGA_AGGIORNAMENTO}") 
