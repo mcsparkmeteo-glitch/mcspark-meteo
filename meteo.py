@@ -270,38 +270,6 @@ interfaccia_custom_html = """
         display: block !important; 
         box-sizing: border-box !important;
     }
-/* Regola speciale per far vedere il sito benissimo su Smartphone */
-    @media (max-width: 600px) {
-        #sidebar-tabelle-mcspark {
-            width: 100% !important;
-            height: 200px !important;
-            left: 0 !important;
-            bottom: 0 !important;
-            border-radius: 12px 12px 0 0 !important;
-            border-width: 2px 0 0 0 !important;
-            box-shadow: 0px -4px 10px rgba(0,0,0,0.15) !important;
-        }
-        #pannello-meteo-pulsanti {
-            top: 5px !important;
-            right: 5px !important;
-            width: 170px !important;
-            padding: 6px !important;
-            box-shadow: 2px 2px 8px rgba(0,0,0,0.15) !important;
-        }
-        #pannello-meteo-pulsanti h4 { 
-            font-size: 11px !important; 
-            margin-top: 0 !important;
-            margin-bottom: 5px !important; 
-        }
-        .opzione-radio { 
-            font-size: 10px !important; 
-            margin-bottom: 4px !important; 
-        }
-        .opzione-radio input {
-            transform: scale(0.8) !important;
-            margin-right: 3px !important;
-        }
-    }
     .messaggio-benvenuto-sidebar { 
         font-size: 11px !important; 
         color: #555 !important; 
@@ -423,6 +391,37 @@ branding_html = (
     f'</div>'
 )
 map_italia.get_root().html.add_child(folium.Element(branding_html))
+# Costringe la mappa a inquadrare l'Italia intera su qualsiasi schermo
 map_italia.fit_bounds([[36.0, 6.0], [47.5, 18.5]])
+
+# Forza lo smartphone a rimpicciolire il menu e a mandare la tabella in basso automaticamente
+stile_smartphone = """
+<style>
+@media (max-width: 600px) {
+    #sidebar-tabelle-mcspark {
+        width: 100% !important;
+        height: 230px !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        border-radius: 12px 12px 0 0 !important;
+        border-width: 2px 0 0 0 !important;
+        z-index: 99999 !important;
+    }
+    #pannello-meteo-pulsanti {
+        top: 10px !important;
+        right: 10px !important;
+        width: 160px !important;
+        padding: 5px !important;
+        z-index: 99999 !important;
+    }
+    #pannello-meteo-pulsanti h4 { font-size: 11px !important; margin: 0 0 4px 0 !important; }
+    .opzione-radio { font-size: 10px !important; margin-bottom: 3px !important; }
+    .opzione-radio input { transform: scale(0.85) !important; }
+}
+</style>
+"""
+map_italia.get_root().header.add_child(folium.Element(stile_smartphone))
+
 map_italia.save("index.html")
+
 print(f"✅ Interfaccia completata in modo nativo e sicuro: {STRINGA_AGGIORNAMENTO}")
