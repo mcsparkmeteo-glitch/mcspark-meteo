@@ -11,17 +11,14 @@ from province_italia import PROVINCE_BY_REGIONE, REGIONI_COORDINATE
 # ==========================================
 NOME_SITO = "McSpark Meteo"
 COPYRIGHT = f"© 2026 {NOME_SITO} - Tutti i diritti riservati"
-FONTE_DATI = "Dati: WeatherAPI Realtime & Forecast Models (GFS/ECMWF)"
+FONTE_DATI = "Dati REALI: Multi-Modello Deterministico (ECMWF IFS / GFS / ICON)"
 FILE_LOGO_LOCAL = "unnamed.jpg" 
 
 # Calcolo automatico del fuso orario italiano per i server GitHub
 ora_italiana = datetime.now(zoneinfo.ZoneInfo("Europe/Rome"))
 STRINGA_AGGIORNAMENTO = ora_italiana.strftime("Aggiornato il: %d/%m/%Y alle %H:%M")
 
-print(f"🌊✨ McSpark Meteo: Avvio iniezione dati ({STRINGA_AGGIORNAMENTO})...")
-
-# Recupero sicuro della chiave API dai Secrets di GitHub
-API_KEY = os.getenv("WEATHER_API_KEY")
+print(f"🌊✨ {NOME_SITO}: Avvio motore multi-modello autentico ({STRINGA_AGGIORNAMENTO})...")
 
 # ==========================================
 # COORDINATE DEI MARI ITALIANI
@@ -39,12 +36,109 @@ DIZIONARIO_MARI = {
 }
 
 # ==========================================
-# 1. RECUPERO DATI METEO VIA API
+# FUNZIONE DI SUPPORTO CONVERSIONE GRADI VENTO -> TESTO
+# ==========================================
+def gradi_a_punti_cardinali(deg):
+    if deg is None: return "N"
+    deg = deg % 360
+    punti = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
+    idx = int((deg + 11.25) / 22.5) % 16
+    return punti[idx]
+
+# ==========================================
+# FUNZIONE DI CHIAMATA RADICALE OPEN-METEO MULTI-MODELLO
+# ==========================================
+def fetch_province_data(lat, lon):
+    # Interroghiamo Open-Meteo chiedendo esplicitamente i 3 modelli deterministici puri
+    # GFS Seamless, ICON (D2/EU), ECMWF IFS (alta risoluzione 0.25)
+    url = (
+        "https://api.open-meteo.com/v1/forecast"
+        f"?latitude={lat}&longitude={lon}"
+        "&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,weather_code"
+        "&models=gfs_seamless,icon_seamless,ecmwf_ifs04"
+        "&forecast_days=1&timezone=Europe/Rome"
+    )
+    
+    # Chiamata parallela per la qualità dell'aria (PM10) sempre via Open-Meteo
+    url_aqi = (
+        f"https://air-quality-api.open-meteo.com/v1/air-quality"
+        f"?latitude={lat}&longitude={lon}"
+        "&hourly=pm10&forecast_days=1&timezone=Europe/Rome"
+    )
+
+    # Valori paracadute di default
+    output = {
+        "t7": 14.0, "t14": 22.0, "t22": 17.0,
+        "pioggia_gfs": 0.0, "pioggia_icon": 0.0, "pioggia_ecmwf": 0.0, "pioggia_media": 0.0,
+        "vento_gfs": 10.0, "vento_icon": 10.0, "vento_ecmwf": 10.0, "vento_media": 10.0,
+        "dir_testo": "N", "fulmini": False, "pm10": 15.0
+    }
+
+    try:
+        r = requests.get(url, timeout=10).json()
+        h = r["hourly"]
+        
+        # Estrazione Precipitazioni Totali Giornaliere REALI per modello
+        output["pioggia_gfs"] = round(sum(h.get("precipitation_gfs_seamless", [0]*24)[:24]), 1)
+        output["pioggia_icon"] = round(sum(h.get("precipitation_icon_seamless", [0]*24)[:24]), 1)
+        output["pioggia_ecmwf"] = round(sum(h.get("precipitation_ecmwf_ifs04", [0]*24)[:24]), 1)
+        output["pioggia_media"] = round((output["pioggia_gfs"] + output["pioggia_icon"] + output["pioggia_ecmwf"]) / 3, 1)
+
+        # Temperature Medie multi-modello sulle 3 fasce orarie chiave
+        # Calcoliamo la media dei tre modelli per le ore 7, 14 e 22
+        t7_gfs = h.get("temperature_2m_gfs_seamless", [14]*24)[7]
+        t7_icon = h.get("temperature_2m_icon_seamless", [14]*24)[7]
+        t7_ecmwf = h.get("temperature_2m_ecmwf_ifs04", [14]*24)[7]
+        output["t7"] = round((t7_gfs + t7_icon + t7_ecmwf) / 3, 1)
+
+        t14_gfs = h.get("temperature_2m_gfs_seamless", [22]*24)[14]
+        t14_icon = h.get("temperature_2m_icon_seamless", [22]*24)[14]
+        t14_ecmwf = h.get("temperature_2m_ecmwf_ifs04", [22]*24)[14]
+        output["t14"] = round((t14_gfs + t14_icon + t14_ecmwf) / 3, 1)
+
+        t22_gfs = h.get("temperature_2m_gfs_seamless", [17]*24)[22]
+        t22_icon = h.get("temperature_2m_icon_seamless", [17]*24)[22]
+        t22_ecmwf = h.get("temperature_2m_ecmwf_ifs04", [17]*24)[22]
+        output["t22"] = round((t22_gfs + t22_icon + t22_ecmwf) / 3, 1)
+
+        # Vento ore 14:00 REALE per ciascun modello
+        output["vento_gfs"] = round(h.get("wind_speed_10m_gfs_seamless", [10]*24)[14], 1)
+        output["vento_icon"] = round(h.get("wind_speed_10m_icon_seamless", [10]*24)[14], 1)
+        output["vento_ecmwf"] = round(h.get("wind_speed_10m_ecmwf_ifs04", [10]*24)[14], 1)
+        output["vento_media"] = round((output["vento_gfs"] + output["vento_icon"] + output["vento_ecmwf"]) / 3, 1)
+        
+        # Direzione del vento delle 14:00 (prendiamo il modello di riferimento ECMWF)
+        deg_vento = h.get("wind_direction_10m_ecmwf_ifs04", [0]*24)[14]
+        output["dir_testo"] = gradi_a_punti_cardinali(deg_vento)
+
+        # LOGICA AUTOMATICA E AUTENTICA DEI TEMPORALI (Weather Codes WMO)
+        # I codici 95, 96, 99 indicano temporali deboli, forti o con grandine.
+        # Analizziamo la finestra pomeridiana e serale (dalle 12 alle 22) di ICON ed ECMWF
+        codici_temporale_wmo = [95, 96, 99]
+        for ora_index in range(12, 23):
+            code_icon = h.get("weather_code_icon_seamless", [0]*24)[ora_index]
+            code_ecmwf = h.get("weather_code_ecmwf_ifs04", [0]*24)[ora_index]
+            if code_icon in codici_temporale_wmo or code_ecmwf in codici_temporale_wmo:
+                output["fulmini"] = True
+                break
+    except Exception as e:
+        print(f"⚠️ Errore API Meteo principale ({e}), applicazione paracadute.")
+
+    try:
+        r_aqi = requests.get(url_aqi, timeout=10).json()
+        output["pm10"] = round(r_aqi["hourly"]["pm10"][14], 1)
+    except Exception:
+        pass # Mantiene il valore di default sicuro
+
+    return output
+
+# ==========================================
+# 1. ELABORAZIONE E SCARICAMENTO DATI PROVINCE
 # ==========================================
 dati_render_mappa = []
 dati_tabelle_regionali = {}
 
-print("📦 Download dati meteorologici reali delle province in corso...")
+print("📦 Download dati meteorologici REALI dalle API Open-Meteo...")
 
 for regione, elenco in PROVINCE_BY_REGIONE.items():
     dati_tabelle_regionali[regione] = {}
@@ -54,78 +148,45 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
         lat_float = float(p["lat"])
         lon_float = float(p["lon"])
         
-        base_t7 = 14.0
-        base_t14 = 22.0
-        base_t22 = 17.0
-        base_prec = 0.0
-        base_wind = 10.0
-        base_pm10 = 15.0
-        dir_testo = "N"
-        ha_fulmini = False
+        # Chiamata al nuovo motore Open-Meteo Multi-Modello
+        res_live = fetch_province_data(lat_float, lon_float)
         
-        if API_KEY:
-            try:
-                url = f"http://api.weatherapi.com/v1/forecast.json?key={API_KEY}&q={lat_float},{lon_float}&days=2&aqi=yes&alerts=no"
-                res = requests.get(url, timeout=10).json()
-                
-                if "forecast" in res:
-                    base_prec = float(res["forecast"]["forecastday"][1]["day"]["totalprecip_mm"])
-                    
-                    ore_totali = res["forecast"]["forecastday"][1]["hour"]
-                    base_t7 = float(ore_totali[7]["temp_c"])
-                    base_t14 = float(ore_totali[14]["temp_c"])
-                    base_t22 = float(ore_totali[22]["temp_c"])
-                    
-                    base_wind = float(res["forecast"]["forecastday"][1]["day"]["maxwind_kph"])
-                    dir_testo = str(ore_totali[14]["wind_dir"])
-                    
-                    codici_temporale = [1087, 1273, 1276, 1279, 1282]
-                    for ora in ore_totali:
-                        codice_ora = int(ora["condition"]["code"])
-                        if codice_ora in codici_temporale:
-                            ha_fulmini = True
-                            break 
-                    
-                    if "air_quality" in res["current"] and "pm10" in res["current"]["air_quality"]:
-                        base_pm10 = float(res["current"]["air_quality"]["pm10"])
-            except Exception as e:
-                print(f"⚠️ Errore nel recupero dati per {nome_provincia}, uso paracadute.")
-        
-        time.sleep(0.1)
-
         info_capoluogo = {
             "nome": nome_provincia, 
             "tipo": "capoluogo", 
             "regione": regione, 
             "lat": lat_float, 
             "lon": lon_float, 
-            "fulmini": ha_fulmini,
+            "fulmini": res_live["fulmini"],
             "pioggia": {
-                "gfs": round(base_prec * 0.9, 1), 
-                "icon": round(base_prec * 1.1, 1), 
-                "ecmwf": round(base_prec, 1), 
-                "media": round(base_prec, 1)
+                "gfs": res_live["pioggia_gfs"], 
+                "icon": res_live["pioggia_icon"], 
+                "ecmwf": res_live["pioggia_ecmwf"], 
+                "media": res_live["pioggia_media"]
             },
-            "t7": {"media": round(base_t7, 1)}, 
-            "t14": {"media": round(base_t14, 1)}, 
-            "t22": {"media": round(base_t22, 1)},
+            "t7": {"media": res_live["t7"]}, 
+            "t14": {"media": res_live["t14"]}, 
+            "t22": {"media": res_live["t22"]},
             "vento": {
-                "gfs": round(base_wind * 0.95, 1), 
-                "icon": round(base_wind * 1.05, 1), 
-                "ecmwf": round(base_wind, 1), 
-                "media": round(base_wind, 1), 
-                "dir": dir_testo
+                "gfs": res_live["vento_gfs"], 
+                "icon": res_live["vento_icon"], 
+                "ecmwf": res_live["vento_ecmwf"], 
+                "media": res_live["vento_media"], 
+                "dir": res_live["dir_testo"]
             },
             "smog": {
-                "valore": round(base_pm10, 1), 
-                "giudizio": "Ottima" if base_pm10 < 20 else "Discreta" if base_pm10 < 35 else "Scadente" if base_pm10 < 50 else "Pessima"
+                "valore": res_live["pm10"], 
+                "giudizio": "Ottima" if res_live["pm10"] < 20 else "Discreta" if res_live["pm10"] < 35 else "Scadente" if res_live["pm10"] < 50 else "Pessima"
             }
         }
         dati_render_mappa.append(info_capoluogo)
         dati_tabelle_regionali[regione][nome_provincia] = info_capoluogo
+        
+        # Delay di rispetto per i server Open-Meteo ed evitare blocchi IP
+        time.sleep(0.05)
 
 # ==========================================
-# 2. RECUPERO DATI METEO MARINI
+# 2. RECUPERO DATI METEO MARINI (OPEN-METEO MARINE)
 # ==========================================
 print("⚓ Elaborazione bollettino mari...")
 dati_mari_render = []
@@ -148,34 +209,39 @@ for i, (nome_mare, coord) in enumerate(DIZIONARIO_MARI.items()):
     dati_mari_render.append({"nome": nome_mare, "lat": coord["lat"], "lon": coord["lon"], "icona": icona_mare, "temp": round(temp_mare, 1), "testo": stato_testo, "colore_classe": hex_m})
 
 # ==========================================
-# 3. FUNZIONI GENERAZIONE TABELLE
+# 3. FUNZIONI GENERAZIONE TABELLE HTML
 # ==========================================
 def tabella_regionale_pioggia(regione_nome):
     html = f"<div class='scheda-meteo s-pioggia'><h3 style='margin:0 0 10px 0; color:#1f77b4; border-bottom:2px solid #1f77b4; padding-bottom:5px; font-size:14px; text-align:center;'>{regione_nome}: Precipitazioni 24h</h3>"
     html += "<table style='width:100%; border-collapse:collapse; text-align:center; font-size:11px; border:1px solid #ddd;'><tr style='background-color:#f8f9fa; font-weight:bold; height:26px;'><td>Provincia</td><td>GFS</td><td>ICON</td><td>ECMWF</td><td style='background-color:#e6f2ff;'>MEDIA</td></tr>"
     for p_nome, d in dati_tabelle_regionali.get(regione_nome, {}).items():
-        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{' ⚡' if d['fulmini'] else ''}</b></td><td>{d['pioggia']['gfs']}</td><td>{d['pioggia']['icon']}</td><td>{d['pioggia']['ecmwf']}</td><td style='background-color:#e6f2ff; font-weight:bold; color:#1f77b4;'>{d['pioggia']['media']} mm</td></tr>"
+        # Se c'è il temporale cambiamo l'icona e inseriamo il fulmine vicino alla provincia
+        icona_temporale = " ⛈️" if d['fulmini'] else ""
+        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{icona_temporale}</b></td><td>{d['pioggia']['gfs']}</td><td>{d['pioggia']['icon']}</td><td>{d['pioggia']['ecmwf']}</td><td style='background-color:#e6f2ff; font-weight:bold; color:#1f77b4;'>{d['pioggia']['media']} mm</td></tr>"
     return html + "</table></div>"
 
 def tabella_regionale_temperatura(regione_nome):
     html = f"<div class='scheda-meteo s-temp' style='display:none;'><h3 style='margin:0 0 10px 0; color:#d62728; border-bottom:2px solid #d62728; padding-bottom:5px; font-size:14px; text-align:center;'>{regione_nome}: Temperature Medie</h3>"
     html += "<table style='width:100%; border-collapse:collapse; text-align:center; font-size:11px; border:1px solid #ddd;'><tr style='background-color:#f8f9fa; font-weight:bold; height:26px;'><td>Provincia</td><td style='color:blue;'>07:00</td><td style='color:red;'>14:00</td><td style='color:darkblue;'>22:00</td></tr>"
     for p_nome, d in dati_tabelle_regionali.get(regione_nome, {}).items():
-        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{' ⚡' if d['fulmini'] else ''}</b></td><td style='color:blue;'>{d['t7']['media']} °C</td><td style='color:red; font-weight:bold; background-color:#ffe6e6;'>{d['t14']['media']} °C</td><td style='color:darkblue;'>{d['t22']['media']} °C</td></tr>"
+        icona_temporale = " ⚡" if d['fulmini'] else ""
+        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{icona_temporale}</b></td><td style='color:blue;'>{d['t7']['media']} °C</td><td style='color:red; font-weight:bold; background-color:#ffe6e6;'>{d['t14']['media']} °C</td><td style='color:darkblue;'>{d['t22']['media']} °C</td></tr>"
     return html + "</table></div>"
 
 def tabella_regionale_vento(regione_nome):
     html = f"<div class='scheda-meteo s-vento' style='display:none;'><h3 style='margin:0 0 10px 0; color:#ff7f0e; border-bottom:2px solid #ff7f0e; padding-bottom:5px; font-size:14px; text-align:center;'>{regione_nome}: Venti e Raffiche</h3>"
     html += "<table style='width:100%; border-collapse:collapse; text-align:center; font-size:11px; border:1px solid #ddd;'><tr style='background-color:#f8f9fa; font-weight:bold; height:26px;'><td>Provincia</td><td>GFS</td><td>ICON</td><td>ECMWF</td><td style='background-color:#ffe6cc;'>MEDIA</td></tr>"
     for p_nome, d in dati_tabelle_regionali.get(regione_nome, {}).items():
-        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{' ⚡' if d['fulmini'] else ''}</b></td><td>{d['vento']['gfs']}</td><td>{d['vento']['icon']}</td><td>{d['vento']['ecmwf']}</td><td style='background-color:#ffe6cc; font-weight:bold; color:#ff7f0e;'>{d['vento']['media']} km/h ({d['vento']['dir']})</td></tr>"
+        icona_temporale = " ⚡" if d['fulmini'] else ""
+        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{icona_temporale}</b></td><td>{d['vento']['gfs']}</td><td>{d['vento']['icon']}</td><td>{d['vento']['ecmwf']}</td><td style='background-color:#ffe6cc; font-weight:bold; color:#ff7f0e;'>{d['vento']['media']} km/h ({d['vento']['dir']})</td></tr>"
     return html + "</table></div>"
 
 def tabella_regionale_smog(regione_nome):
     html = f"<div class='scheda-meteo s-smog' style='display:none;'><h3 style='margin:0 0 10px 0; color:#9467bd; border-bottom:2px solid #9467bd; padding-bottom:5px; font-size:14px; text-align:center;'>{regione_nome}: Qualità dell'Aria</h3>"
     html += "<table style='width:100%; border-collapse:collapse; text-align:center; font-size:11px; border:1px solid #ddd;'><tr style='background-color:#f8f9fa; font-weight:bold; height:26px;'><td>Provincia</td><td>PM10</td><td style='background-color:#f3e6ff;'>Stato Aria</td></tr>"
     for p_nome, d in dati_tabelle_regionali.get(regione_nome, {}).items():
-        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{' ⚡' if d['fulmini'] else ''}</b></td><td>{d['smog']['valore']} µg/m³</td><td style='background-color:#f3e6ff; font-weight:bold;'>{d['smog']['giudizio']}</td></tr>"
+        icona_temporale = " ⚡" if d['fulmini'] else ""
+        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{icona_temporale}</b></td><td>{d['smog']['valore']} µg/m³</td><td style='background-color:#f3e6ff; font-weight:bold;'>{d['smog']['giudizio']}</td></tr>"
     return html + "</table></div>"
 
 # ==========================================
@@ -213,7 +279,7 @@ for r_nome in REGIONI_COORDINATE.keys():
     </div>
     """
 
-# INIEZIONE DI INDICATORI CLICCABILI NATIVI CORAZZATI
+# INIEZIONE DI INDICATORI CLICCABILI NATIVI CORAZZATI (I tuoi cerchietti originali)
 for r_nome, coord in REGIONI_COORDINATE.items():
     id_pulito = r_nome.replace(" ", "-").replace("'", "-")
     
@@ -239,7 +305,7 @@ for mare in dati_mari_render:
     folium.Marker(location=[mare["lat"], mare["lon"]], icon=folium.DivIcon(html=f"<div style='font-family: Arial, sans-serif; font-size: 11px; text-align: center; font-weight: bold; color: #003366; text-shadow: 1px 1px 2px white;'><span style='font-size:16px;'>{mare['icona']}</span><br>🌡️ {mare['temp']}°C</div>"), popup=folium.Popup(popup_html, max_width=220)).add_to(map_italia)
 
 # ==========================================
-# 6. INTERFACCIA E CODICE JAVASCRIPT CORAZZATO (SENZA CONFLITTI DI SINTASSI PYTHON)
+# 6. INTERFACCIA E CODICE JAVASCRIPT CORAZZATO
 # ==========================================
 interfaccia_custom_html = """
 <style>
@@ -391,10 +457,8 @@ branding_html = (
     f'</div>'
 )
 map_italia.get_root().html.add_child(folium.Element(branding_html))
-# Costringe la mappa a inquadrare l'Italia intera su qualsiasi schermo
-map_italia.fit_bounds([[36.0, 6.0], [47.5, 18.5]])
 
-# Forza lo smartphone a rimpicciolire il menu e a mandare la tabella in basso automaticamente
+# FORZATURA CODICE RESPONSIVE SMARTPHONE (Risolto bug graffa mancante e rimosse ripetizioni inutili)
 stile_smartphone = """
 <style>
 @media (max-width: 600px) {
@@ -414,15 +478,23 @@ stile_smartphone = """
         padding: 5px !important;
         z-index: 99999 !important;
     }
-   .opzione-radio { display: block; margin-bottom: 8px; cursor: pointer; font-size: 12px; font-weight: bold; color: #333; }
+    .opzione-radio { 
+        display: block; 
+        margin-bottom: 8px; 
+        cursor: pointer; 
+        font-size: 12px; 
+        font-weight: bold; 
+        color: #333; 
+    }
+}
 </style>
 """
+map_italia.get_root().html.add_child(folium.Element(stile_smartphone))
 
-map_italia.get_root().html.add_child(folium.Element(branding_html))
-
-# Costringe la mappa a inquadrare l'Italia intera
+# Costringe la mappa a inquadrare l'Italia intera all'avvio
 map_italia.fit_bounds([[36.0, 6.0], [47.5, 18.5]])
 
+# Salvataggio finale sicuro
 map_italia.save("index.html")
 
-print(f"✅ Interfaccia completata in modo nativo e sicuro: {STRINGA_AGGIORNAMENTO}") 
+print(f"✅ Interfaccia completata e salvata con successo: {STRINGA_AGGIORNAMENTO}")
