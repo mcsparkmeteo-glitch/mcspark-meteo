@@ -329,18 +329,32 @@ branding_html = f'''
 '''
 map_italia.get_root().html.add_child(folium.Element(branding_html))
 
-stile_smartphone = """
-<style>
-@media (max-width: 600px) {
-    #sidebar-tabelle-mcspark { width: 100% !important; height: 230px !important; left: 0 !important; bottom: 0 !important; border-radius: 12px 12px 0 0 !important; border-width: 2px 0 0 0 !important; z-index: 99999 !important; }
-    #pannello-meteo-pulsanti { top: 10px !important; right: 10px !important; width: 160px !important; padding: 5px !important; z-index: 99999 !important; }
-    .opzione-radio { display: block; margin-bottom: 8px; cursor: pointer; font-size: 12px; font-weight: bold; color: #333; }
-}
-</style>
-"""
-map_italia.get_root().html.add_child(folium.Element(stile_smartphone))
+# Forza lo smartphone a rimpicciolire il menu e a mandare la tabella in basso automaticamente 
+stile_smartphone = """ 
+ <style> 
+ @media (max-width: 600px) { 
+     #sidebar-tabelle-mcspark { 
+         width: 100% !important; 
+         height: 230px !important; 
+         left: 0 !important; 
+         bottom: 0 !important; 
+         border-radius: 12px 12px 0 0 !important; 
+         border-width: 2px 0 0 0 !important; 
+         z-index: 99999 !important; 
+     } 
+     #pannello-meteo-pulsanti { 
+         top: 10px !important; 
+         right: 10px !important; 
+         width: 160px !important; 
+         padding: 5px !important; 
+         z-index: 99999 !important; 
+     } 
+     .opzione-radio { display: block; margin-bottom: 8px; cursor: pointer; font-size: 12px; font-weight: bold; color: #333; } 
+ } 
+ </style> 
+ """ 
 
-map_italia.fit_bounds([[36.0, 6.0], [47.5, 18.5]])
+map_italia.get_root().html.add_child(folium.Element(stile_smartphone))
 map_italia.save("index.html")
 
 print(f"✅ Interfaccia completata in modo nativo e sicuro: {STRINGA_AGGIORNAMENTO}")
