@@ -89,7 +89,7 @@ dati_tabelle_regionali = {r: {} for r in PROVINCE_BY_REGIONE.keys()}
 for idx, prov in enumerate(elenco_province_piatto):
     p_data = {
         "p_ecmwf": 0.0, "p_gfs": 0.0, "p_icon": 0.0, "p_media": 0.0,
-        "v_ecmwf": 10.0, "v_gfs": 10.0, "v_icon": 10.0, "v_media": 10.0,
+        "v_ecmwf": 0.0, "v_gfs": 0.0, "v_icon": 0.0, "v_media": 0.0,
         "t7": 14.0, "t14": 22.0, "t22": 17.0, "dir_testo": "N", "fulmini": False, "pm10": 15.0
     }
     
@@ -102,7 +102,7 @@ for idx, prov in enumerate(elenco_province_piatto):
             p_data["t7"] = round(h.get("temperature_2m", [14]*24)[7], 1)
             p_data["t14"] = round(h.get("temperature_2m", [22]*24)[14], 1)
             p_data["t22"] = round(h.get("temperature_2m", [17]*24)[22], 1)
-            p_data["dir_testo"] = gradi_a_punts_cardinali(h.get("wind_direction_10m", [0]*24)[14])
+            p_data["dir_testo"] = gradi_a_punti_cardinali(h.get("wind_direction_10m", [0]*24)[14])
             
             w_codes = h.get("weather_code", [0]*24)
             for o_idx in range(12, min(23, len(w_codes))):
@@ -120,9 +120,9 @@ for idx, prov in enumerate(elenco_province_piatto):
             p_data["p_media"] = round((p_data["p_ecmwf"] + p_data["p_gfs"] + p_data["p_icon"]) / 3, 1)
             
             # Estrazione Vento (Raffiche Massime)
-            p_data["v_ecmwf"] = round(d.get("wind_gusts_max_ecmwf_ifs04", [10.0])[0], 1)
-            p_data["v_gfs"] = round(d.get("wind_gusts_max_gfs_seamless", [10.0])[0], 1)
-            p_data["v_icon"] = round(d.get("wind_gusts_max_icon_seamless", [10.0])[0], 1)
+            p_data["v_ecmwf"] = round(d.get("wind_gusts_max_ecmwf_ifs04", [0.0])[0], 1)
+            p_data["v_gfs"] = round(d.get("wind_gusts_max_gfs_seamless", [0.0])[0], 1)
+            p_data["v_icon"] = round(d.get("wind_gusts_max_icon_seamless", [0.0])[0], 1)
             p_data["v_media"] = round((p_data["v_ecmwf"] + p_data["v_gfs"] + p_data["v_icon"]) / 3, 1)
 
     if idx < len(res_aqi) and res_aqi[idx] and "hourly" in res_aqi[idx]:
