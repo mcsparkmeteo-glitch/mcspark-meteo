@@ -51,8 +51,8 @@ lons = []
 for regione, elenco in PROVINCE_BY_REGIONE.items():
     for p in elenco:
         elenco_province_piatto.append({"nome": p["nome"], "regione": regione, "lat": float(p["lat"]), "lon": float(p["lon"])})
-        lats.append(p["lat"])
-        lons.append(p["lon"])
+        lats.append(str(p["lat"]))
+        lons.append(str(p["lon"]))
 
 stringa_lats = ",".join(lats)
 stringa_lons = ",".join(lons)
@@ -77,7 +77,7 @@ except Exception as e:
     res_meteo = []
     res_aqi = []
 
-# Trasformiamo la risposta in lista se Open-Meteo restituisce un dizionario singolo per 1 sola coordinata
+# Normalizzazione output se arriva un dizionario singolo invece di una lista
 if isinstance(res_meteo, dict) and "hourly" in res_meteo: res_meteo = [res_meteo]
 if isinstance(res_aqi, dict) and "hourly" in res_aqi: res_aqi = [res_aqi]
 
@@ -88,7 +88,6 @@ dati_render_mappa = []
 dati_tabelle_regionali = {r: {} for r in PROVINCE_BY_REGIONE.keys()}
 
 for idx, prov in enumerate(elenco_province_piatto):
-    # Valori di salvataggio standard se manca il dato di quella specifica provincia
     p_data = {
         "pioggia_gfs": 0.0, "pioggia_icon": 0.0, "pioggia_ecmwf": 0.0, "pioggia_media": 0.0,
         "t7": 14.0, "t14": 22.0, "t22": 17.0,
@@ -96,7 +95,7 @@ for idx, prov in enumerate(elenco_province_piatto):
         "dir_testo": "N", "fulmini": False, "pm10": 15.0
     }
     
-    if idx < len(res_meteo) and "hourly" in res_meteo[idx]:
+    if idx < len(res_meteo) and isinstance(res_meteo, list) and "hourly" in res_meteo[idx]:
         h = res_meteo[idx]["hourly"]
         p_data["pioggia_gfs"] = round(sum(h.get("precipitation_gfs_seamless", [0]*24)[:24]), 1)
         p_data["pioggia_icon"] = round(sum(h.get("precipitation_icon_seamless", [0]*24)[:24]), 1)
@@ -113,13 +112,12 @@ for idx, prov in enumerate(elenco_province_piatto):
         p_data["vento_media"] = round((p_data["vento_gfs"] + p_data["vento_icon"] + p_data["vento_ecmwf"]) / 3, 1)
         p_data["dir_testo"] = gradi_a_punti_cardinali(h.get("wind_direction_10m_ecmwf_ifs04", [0]*24)[14])
         
-        # Controllo temporali ore 12-22
         for o_idx in range(12, 23):
             if h.get("weather_code_icon_seamless", [0]*24)[o_idx] in [95, 96, 99] or h.get("weather_code_ecmwf_ifs04", [0]*24)[o_idx] in [95, 96, 99]:
                 p_data["fulmini"] = True
                 break
 
-    if idx < len(res_aqi) and "hourly" in res_aqi[idx]:
+    if idx < len(res_aqi) and isinstance(res_aqi, list) and "hourly" in res_aqi[idx]:
         p_data["pm10"] = round(res_aqi[idx]["hourly"].get("pm10", [15]*24)[14], 1)
 
     info_capoluogo = {
@@ -157,49 +155,61 @@ for i, (nome_mare, coord) in enumerate(DIZIONARIO_MARI.items()):
     dati_mari_render.append({"nome": nome_mare, "lat": coord["lat"], "lon": coord["lon"], "icona": icona_mare, "temp": round(temp_mare, 1), "testo": stato_testo, "colore_classe": hex_m})
 
 # ==========================================
-# 4. TABELLE HTML REGIONALI
+# 4. GENERAZIONE TABELLE HTML REGIONALI
 # ==========================================
 def tabella_regionale_pioggia(regione_nome):
     html = f"<div class='scheda-meteo s-pioggia'><h3 style='margin:0 0 10px 0; color:#1f77b4; border-bottom:2px solid #1f77b4; padding-bottom:5px; font-size:14px; text-align:center;'>{regione_nome}: Precipitazioni 24h</h3>"
     html += "<table style='width:100%; border-collapse:collapse; text-align:center; font-size:11px; border:1px solid #ddd;'><tr style='background-color:#f8f9fa; font-weight:bold; height:26px;'><td>Provincia</td><td>GFS</td><td>ICON</td><td>ECMWF</td><td style='background-color:#e6f2ff;'>MEDIA</td></tr>"
     for p_nome, d in dati_tabelle_regionali.get(regione_nome, {}).items():
-        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{' ⛈️' if d['fulmini'] else ''}</b></td><td>{d['pioggia']['gfs']}</td><td>{d['pioggia']['icon']}</td><td>{d['pioggia']['ecmwf']}</td><td style='background-color:#e6f2ff; font-weight:bold; color:#1f77b4;'>{d['pioggia']['media']} mm</td></tr>"
+        ico = " ⛈️" if d["fulmini"] else ""
+        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{ico}</b></td><td>{d['pioggia']['gfs']}</td><td>{d['pioggia']['icon']}</td><td>{d['pioggia']['ecmwf']}</td><td style='background-color:#e6f2ff; font-weight:bold; color:#1f77b4;'>{d['pioggia']['media']} mm</td></tr>"
     return html + "</table></div>"
 
 def tabella_regionale_temperatura(regione_nome):
     html = f"<div class='scheda-meteo s-temp' style='display:none;'><h3 style='margin:0 0 10px 0; color:#d62728; border-bottom:2px solid #d62728; padding-bottom:5px; font-size:14px; text-align:center;'>{regione_nome}: Temperature Medie</h3>"
     html += "<table style='width:100%; border-collapse:collapse; text-align:center; font-size:11px; border:1px solid #ddd;'><tr style='background-color:#f8f9fa; font-weight:bold; height:26px;'><td>Provincia</td><td style='color:blue;'>07:00</td><td style='color:red;'>14:00</td><td style='color:darkblue;'>22:00</td></tr>"
     for p_nome, d in dati_tabelle_regionali.get(regione_nome, {}).items():
-        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{' ⚡' if d['fulmini'] else ''}</b></td><td style='color:blue;'>{d['t7']['media']} °C</td><td style='color:red; font-weight:bold; background-color:#ffe6e6;'>{d['t14']['media']} °C</td><td style='color:darkblue;'>{d['t22']['media']} °C</td></tr>"
+        ico = " ⚡" if d["fulmini"] else ""
+        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{ico}</b></td><td style='color:blue;'>{d['t7']['media']} °C</td><td style='color:red; font-weight:bold; background-color:#ffe6e6;'>{d['t14']['media']} °C</td><td style='color:darkblue;'>{d['t22']['media']} °C</td></tr>"
     return html + "</table></div>"
 
 def tabella_regionale_vento(regione_nome):
     html = f"<div class='scheda-meteo s-vento' style='display:none;'><h3 style='margin:0 0 10px 0; color:#ff7f0e; border-bottom:2px solid #ff7f0e; padding-bottom:5px; font-size:14px; text-align:center;'>{regione_nome}: Venti e Raffiche</h3>"
     html += "<table style='width:100%; border-collapse:collapse; text-align:center; font-size:11px; border:1px solid #ddd;'><tr style='background-color:#f8f9fa; font-weight:bold; height:26px;'><td>Provincia</td><td>GFS</td><td>ICON</td><td>ECMWF</td><td style='background-color:#ffe6cc;'>MEDIA</td></tr>"
     for p_nome, d in dati_tabelle_regionali.get(regione_nome, {}).items():
-        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{' ⚡' if d['fulmini'] else ''}</b></td><td>{d['vento']['gfs']}</td><td>{d['vento']['icon']}</td><td>{d['vento']['ecmwf']}</td><td style='background-color:#ffe6cc; font-weight:bold; color:#ff7f0e;'>{d['vento']['media']} km/h ({d['vento']['dir']})</td></tr>"
+        ico = " ⚡" if d["fulmini"] else ""
+        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{ico}</b></td><td>{d['vento']['gfs']}</td><td>{d['vento']['icon']}</td><td>{d['vento']['ecmwf']}</td><td style='background-color:#ffe6cc; font-weight:bold; color:#ff7f0e;'>{d['vento']['media']} km/h ({d['vento']['dir']})</td></tr>"
     return html + "</table></div>"
 
 def tabella_regionale_smog(regione_nome):
     html = f"<div class='scheda-meteo s-smog' style='display:none;'><h3 style='margin:0 0 10px 0; color:#9467bd; border-bottom:2px solid #9467bd; padding-bottom:5px; font-size:14px; text-align:center;'>{regione_nome}: Qualità dell'Aria</h3>"
     html += "<table style='width:100%; border-collapse:collapse; text-align:center; font-size:11px; border:1px solid #ddd;'><tr style='background-color:#f8f9fa; font-weight:bold; height:26px;'><td>Provincia</td><td>PM10</td><td style='background-color:#f3e6ff;'>Stato Aria</td></tr>"
     for p_nome, d in dati_tabelle_regionali.get(regione_nome, {}).items():
-        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{' ⚡' if d['fulmini'] else ''}</b></td><td>{d['smog']['valore']} µg/m³</td><td style='background-color:#f3e6ff; font-weight:bold;'>{d['smog']['giudizio']}</td></tr>"
+        ico = " ⚡" if d["fulmini"] else ""
+        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{ico}</b></td><td>{d['smog']['valore']} ug/m3</td><td style='background-color:#f3e6ff; font-weight:bold;'>{d['smog']['giudizio']}</td></tr>"
     return html + "</table></div>"
 
 # ==========================================
-# 5. CREAZIONE MAPPA
+# 5. CREAZIONE MAPPA FOLLIUM
 # ==========================================
 print("🗺️ Disegno della mappa interattiva...")
 map_italia = folium.Map(location=[42.0, 12.5], zoom_start=6, tiles="cartodbpositron")
 
 for d in dati_render_mappa:
     raggio_mappa = 45000
-    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-pioggia sfumatura-{'001d58' if d['pioggia']['media'] >= 15 else '225ea8' if d['pioggia']['media'] >= 5 else '41b6c4' if d['pioggia']['media'] >= 1 else 'a1dab4'}").add_to(map_italia)
+    
+    cl_p = "001d58" if d["pioggia"]["media"] >= 15 else "225ea8" if d["pioggia"]["media"] >= 5 else "41b6c4" if d["pioggia"]["media"] >= 1 else "a1dab4"
+    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-pioggia sfumatura-{cl_p}").add_to(map_italia)
+    
     t_val = d["t14"]["media"]
-    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-temp sfumatura-{'d73027' if t_val >= 28 else 'f46d43' if t_val >= 22 else 'fee08b' if t_val >= 15 else '1a9850'}").add_to(map_italia)
-    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-vento sfumatura-{'d73027' if d['vento']['media'] >= 25 else 'fee090' if d['vento']['media'] >= 10 else 'e0f3f8'}").add_to(map_italia)
-    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-smog sfumatura-{'f46d43' if d['smog']['valore'] >= 40 else 'fee08b' if d['smog']['valore'] >= 20 else '66bd63'}").add_to(map_italia)
+    cl_t = "d73027" if t_val >= 28 else "f46d43" if t_val >= 22 else "fee08b" if t_val >= 15 else "1a9850"
+    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-temp sfumatura-{cl_t}").add_to(map_italia)
+    
+    cl_w = "d73027" if d["vento"]["media"] >= 25 else "fee090" if d["vento"]["media"] >= 10 else "e0f3f8"
+    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-vento sfumatura-{cl_w}").add_to(map_italia)
+    
+    cl_s = "f46d43" if d["smog"]["valore"] >= 40 else "fee08b" if d["smog"]["valore"] >= 20 else "66bd63"
+    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-smog sfumatura-{cl_s}").add_to(map_italia)
 
 blocchi_html_tabelle = ""
 for r_nome in REGIONI_COORDINATE.keys():
@@ -217,7 +227,7 @@ for mare in dati_mari_render:
     folium.Marker(location=[mare["lat"], mare["lon"]], icon=folium.DivIcon(html=f"<div style='font-family: Arial, sans-serif; font-size: 11px; text-align: center; font-weight: bold; color: #003366; text-shadow: 1px 1px 2px white;'><span style='font-size:16px;'>{mare['icona']}</span><br>🌡️ {mare['temp']}°C</div>"), popup=folium.Popup(popup_html, max_width=220)).add_to(map_italia)
 
 # ==========================================
-# 6. INTERFACCIA INTERNA ED ELEMENTI JAVASCRIPT
+# 6. STRUTTURA INTERFACCIA E JAVASCRIPT
 # ==========================================
 interfaccia_custom_html = """
 <style>
