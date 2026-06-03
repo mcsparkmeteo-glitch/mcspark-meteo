@@ -18,7 +18,7 @@ FILE_LOGO_LOCAL = "unnamed.jpg"
 ora_italiana = datetime.now(zoneinfo.ZoneInfo("Europe/Rome"))
 STRINGA_AGGIORNAMENTO = ora_italiana.strftime("Aggiornato il: %d/%m/%Y alle %H:%M")
 
-print(f"🌊✨ {NOME_SITO}: Avvio motore multi-modello autentico ({STRINGA_AGGIORNAMENTO})...")
+print(f"🌊✨ {NOME_SITO}: Avvio motore multi-modello ultra-rapido ({STRINGA_AGGIORNAMENTO})...")
 
 # ==========================================
 # COORDINATE DEI MARI ITALIANI
@@ -35,158 +35,106 @@ DIZIONARIO_MARI = {
     "Mare di Sicilia": {"lat": 36.80, "lon": 13.50}
 }
 
-# ==========================================
-# FUNZIONE DI SUPPORTO CONVERSIONE GRADI VENTO -> TESTO
-# ==========================================
 def gradi_a_punti_cardinali(deg):
     if deg is None: return "N"
     deg = deg % 360
     punti = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
-    idx = int((deg + 11.25) / 22.5) % 16
-    return punti[idx]
+    return punti[int((deg + 11.25) / 22.5) % 16]
 
 # ==========================================
-# FUNZIONE DI CHIAMATA RADICALE OPEN-METEO MULTI-MODELLO
+# 1. SCARICAMENTO DI MASSA (BULK) - TUTTE LE PROVINCE IN 1 SOLA CHIAMATA
 # ==========================================
-def fetch_province_data(lat, lon):
-    # Interroghiamo Open-Meteo chiedendo esplicitamente i 3 modelli deterministici puri
-    # GFS Seamless, ICON (D2/EU), ECMWF IFS (alta risoluzione 0.25)
-    url = (
-        "https://api.open-meteo.com/v1/forecast"
-        f"?latitude={lat}&longitude={lon}"
-        "&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,weather_code"
-        "&models=gfs_seamless,icon_seamless,ecmwf_ifs04"
-        "&forecast_days=1&timezone=Europe/Rome"
-    )
-    
-    # Chiamata parallela per la qualità dell'aria (PM10) sempre via Open-Meteo
-    url_aqi = (
-        f"https://air-quality-api.open-meteo.com/v1/air-quality"
-        f"?latitude={lat}&longitude={lon}"
-        "&hourly=pm10&forecast_days=1&timezone=Europe/Rome"
-    )
+elenco_province_piatto = []
+lats = []
+lons = []
 
-    # Valori paracadute di default
-    output = {
-        "t7": 14.0, "t14": 22.0, "t22": 17.0,
+for regione, elenco in PROVINCE_BY_REGIONE.items():
+    for p in elenco:
+        elenco_province_piatto.append({"nome": p["nome"], "regione": regione, "lat": float(p["lat"]), "lon": float(p["lon"])})
+        lats.append(p["lat"])
+        lons.append(p["lon"])
+
+stringa_lats = ",".join(lats)
+stringa_lons = ",".join(lons)
+
+print("📦 Download in blocco dei dati meteorologici (1 sola richiesta per 110 province)...")
+url_bulk = (
+    f"https://api.open-meteo.com/v1/forecast?latitude={stringa_lats}&longitude={stringa_lons}"
+    "&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,weather_code"
+    "&models=gfs_seamless,icon_seamless,ecmwf_ifs04&forecast_days=1&timezone=Europe/Rome"
+)
+
+url_aqi_bulk = (
+    f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={stringa_lats}&longitude={stringa_lons}"
+    "&hourly=pm10&forecast_days=1&timezone=Europe/Rome"
+)
+
+try:
+    res_meteo = requests.get(url_bulk, timeout=30).json()
+    res_aqi = requests.get(url_aqi_bulk, timeout=30).json()
+except Exception as e:
+    print(f"❌ Errore fatale nel download dei dati di massa: {e}")
+    res_meteo = []
+    res_aqi = []
+
+# Trasformiamo la risposta in lista se Open-Meteo restituisce un dizionario singolo per 1 sola coordinata
+if isinstance(res_meteo, dict) and "hourly" in res_meteo: res_meteo = [res_meteo]
+if isinstance(res_aqi, dict) and "hourly" in res_aqi: res_aqi = [res_aqi]
+
+# ==========================================
+# 2. ELABORAZIONE E STRUTTURAZIONE DATI
+# ==========================================
+dati_render_mappa = []
+dati_tabelle_regionali = {r: {} for r in PROVINCE_BY_REGIONE.keys()}
+
+for idx, prov in enumerate(elenco_province_piatto):
+    # Valori di salvataggio standard se manca il dato di quella specifica provincia
+    p_data = {
         "pioggia_gfs": 0.0, "pioggia_icon": 0.0, "pioggia_ecmwf": 0.0, "pioggia_media": 0.0,
+        "t7": 14.0, "t14": 22.0, "t22": 17.0,
         "vento_gfs": 10.0, "vento_icon": 10.0, "vento_ecmwf": 10.0, "vento_media": 10.0,
         "dir_testo": "N", "fulmini": False, "pm10": 15.0
     }
-
-    try:
-        r = requests.get(url, timeout=10).json()
-        h = r["hourly"]
-        
-        # Estrazione Precipitazioni Totali Giornaliere REALI per modello
-        output["pioggia_gfs"] = round(sum(h.get("precipitation_gfs_seamless", [0]*24)[:24]), 1)
-        output["pioggia_icon"] = round(sum(h.get("precipitation_icon_seamless", [0]*24)[:24]), 1)
-        output["pioggia_ecmwf"] = round(sum(h.get("precipitation_ecmwf_ifs04", [0]*24)[:24]), 1)
-        output["pioggia_media"] = round((output["pioggia_gfs"] + output["pioggia_icon"] + output["pioggia_ecmwf"]) / 3, 1)
-
-        # Temperature Medie multi-modello sulle 3 fasce orarie chiave
-        # Calcoliamo la media dei tre modelli per le ore 7, 14 e 22
-        t7_gfs = h.get("temperature_2m_gfs_seamless", [14]*24)[7]
-        t7_icon = h.get("temperature_2m_icon_seamless", [14]*24)[7]
-        t7_ecmwf = h.get("temperature_2m_ecmwf_ifs04", [14]*24)[7]
-        output["t7"] = round((t7_gfs + t7_icon + t7_ecmwf) / 3, 1)
-
-        t14_gfs = h.get("temperature_2m_gfs_seamless", [22]*24)[14]
-        t14_icon = h.get("temperature_2m_icon_seamless", [22]*24)[14]
-        t14_ecmwf = h.get("temperature_2m_ecmwf_ifs04", [22]*24)[14]
-        output["t14"] = round((t14_gfs + t14_icon + t14_ecmwf) / 3, 1)
-
-        t22_gfs = h.get("temperature_2m_gfs_seamless", [17]*24)[22]
-        t22_icon = h.get("temperature_2m_icon_seamless", [17]*24)[22]
-        t22_ecmwf = h.get("temperature_2m_ecmwf_ifs04", [17]*24)[22]
-        output["t22"] = round((t22_gfs + t22_icon + t22_ecmwf) / 3, 1)
-
-        # Vento ore 14:00 REALE per ciascun modello
-        output["vento_gfs"] = round(h.get("wind_speed_10m_gfs_seamless", [10]*24)[14], 1)
-        output["vento_icon"] = round(h.get("wind_speed_10m_icon_seamless", [10]*24)[14], 1)
-        output["vento_ecmwf"] = round(h.get("wind_speed_10m_ecmwf_ifs04", [10]*24)[14], 1)
-        output["vento_media"] = round((output["vento_gfs"] + output["vento_icon"] + output["vento_ecmwf"]) / 3, 1)
-        
-        # Direzione del vento delle 14:00 (prendiamo il modello di riferimento ECMWF)
-        deg_vento = h.get("wind_direction_10m_ecmwf_ifs04", [0]*24)[14]
-        output["dir_testo"] = gradi_a_punti_cardinali(deg_vento)
-
-        # LOGICA AUTOMATICA E AUTENTICA DEI TEMPORALI (Weather Codes WMO)
-        # I codici 95, 96, 99 indicano temporali deboli, forti o con grandine.
-        # Analizziamo la finestra pomeridiana e serale (dalle 12 alle 22) di ICON ed ECMWF
-        codici_temporale_wmo = [95, 96, 99]
-        for ora_index in range(12, 23):
-            code_icon = h.get("weather_code_icon_seamless", [0]*24)[ora_index]
-            code_ecmwf = h.get("weather_code_ecmwf_ifs04", [0]*24)[ora_index]
-            if code_icon in codici_temporale_wmo or code_ecmwf in codici_temporale_wmo:
-                output["fulmini"] = True
-                break
-    except Exception as e:
-        print(f"⚠️ Errore API Meteo principale ({e}), applicazione paracadute.")
-
-    try:
-        r_aqi = requests.get(url_aqi, timeout=10).json()
-        output["pm10"] = round(r_aqi["hourly"]["pm10"][14], 1)
-    except Exception:
-        pass # Mantiene il valore di default sicuro
-
-    return output
-
-# ==========================================
-# 1. ELABORAZIONE E SCARICAMENTO DATI PROVINCE
-# ==========================================
-dati_render_mappa = []
-dati_tabelle_regionali = {}
-
-print("📦 Download dati meteorologici REALI dalle API Open-Meteo...")
-
-for regione, elenco in PROVINCE_BY_REGIONE.items():
-    dati_tabelle_regionali[regione] = {}
     
-    for p in elenco:
-        nome_provincia = p["nome"]
-        lat_float = float(p["lat"])
-        lon_float = float(p["lon"])
+    if idx < len(res_meteo) and "hourly" in res_meteo[idx]:
+        h = res_meteo[idx]["hourly"]
+        p_data["pioggia_gfs"] = round(sum(h.get("precipitation_gfs_seamless", [0]*24)[:24]), 1)
+        p_data["pioggia_icon"] = round(sum(h.get("precipitation_icon_seamless", [0]*24)[:24]), 1)
+        p_data["pioggia_ecmwf"] = round(sum(h.get("precipitation_ecmwf_ifs04", [0]*24)[:24]), 1)
+        p_data["pioggia_media"] = round((p_data["pioggia_gfs"] + p_data["pioggia_icon"] + p_data["pioggia_ecmwf"]) / 3, 1)
         
-        # Chiamata al nuovo motore Open-Meteo Multi-Modello
-        res_live = fetch_province_data(lat_float, lon_float)
+        p_data["t7"] = round((h.get("temperature_2m_gfs_seamless", [14]*24)[7] + h.get("temperature_2m_icon_seamless", [14]*24)[7] + h.get("temperature_2m_ecmwf_ifs04", [14]*24)[7]) / 3, 1)
+        p_data["t14"] = round((h.get("temperature_2m_gfs_seamless", [22]*24)[14] + h.get("temperature_2m_icon_seamless", [22]*24)[14] + h.get("temperature_2m_ecmwf_ifs04", [22]*24)[14]) / 3, 1)
+        p_data["t22"] = round((h.get("temperature_2m_gfs_seamless", [17]*24)[22] + h.get("temperature_2m_icon_seamless", [17]*24)[22] + h.get("temperature_2m_ecmwf_ifs04", [17]*24)[22]) / 3, 1)
         
-        info_capoluogo = {
-            "nome": nome_provincia, 
-            "tipo": "capoluogo", 
-            "regione": regione, 
-            "lat": lat_float, 
-            "lon": lon_float, 
-            "fulmini": res_live["fulmini"],
-            "pioggia": {
-                "gfs": res_live["pioggia_gfs"], 
-                "icon": res_live["pioggia_icon"], 
-                "ecmwf": res_live["pioggia_ecmwf"], 
-                "media": res_live["pioggia_media"]
-            },
-            "t7": {"media": res_live["t7"]}, 
-            "t14": {"media": res_live["t14"]}, 
-            "t22": {"media": res_live["t22"]},
-            "vento": {
-                "gfs": res_live["vento_gfs"], 
-                "icon": res_live["vento_icon"], 
-                "ecmwf": res_live["vento_ecmwf"], 
-                "media": res_live["vento_media"], 
-                "dir": res_live["dir_testo"]
-            },
-            "smog": {
-                "valore": res_live["pm10"], 
-                "giudizio": "Ottima" if res_live["pm10"] < 20 else "Discreta" if res_live["pm10"] < 35 else "Scadente" if res_live["pm10"] < 50 else "Pessima"
-            }
-        }
-        dati_render_mappa.append(info_capoluogo)
-        dati_tabelle_regionali[regione][nome_provincia] = info_capoluogo
+        p_data["vento_gfs"] = round(h.get("wind_speed_10m_gfs_seamless", [10]*24)[14], 1)
+        p_data["vento_icon"] = round(h.get("wind_speed_10m_icon_seamless", [10]*24)[14], 1)
+        p_data["vento_ecmwf"] = round(h.get("wind_speed_10m_ecmwf_ifs04", [10]*24)[14], 1)
+        p_data["vento_media"] = round((p_data["vento_gfs"] + p_data["vento_icon"] + p_data["vento_ecmwf"]) / 3, 1)
+        p_data["dir_testo"] = gradi_a_punti_cardinali(h.get("wind_direction_10m_ecmwf_ifs04", [0]*24)[14])
         
-        # Delay di rispetto per i server Open-Meteo ed evitare blocchi IP
-        time.sleep(0.05)
+        # Controllo temporali ore 12-22
+        for o_idx in range(12, 23):
+            if h.get("weather_code_icon_seamless", [0]*24)[o_idx] in [95, 96, 99] or h.get("weather_code_ecmwf_ifs04", [0]*24)[o_idx] in [95, 96, 99]:
+                p_data["fulmini"] = True
+                break
+
+    if idx < len(res_aqi) and "hourly" in res_aqi[idx]:
+        p_data["pm10"] = round(res_aqi[idx]["hourly"].get("pm10", [15]*24)[14], 1)
+
+    info_capoluogo = {
+        "nome": prov["nome"], "tipo": "capoluogo", "regione": prov["regione"], "lat": prov["lat"], "lon": prov["lon"], "fulmini": p_data["fulmini"],
+        "pioggia": {"gfs": p_data["pioggia_gfs"], "icon": p_data["pioggia_icon"], "ecmwf": p_data["pioggia_ecmwf"], "media": p_data["pioggia_media"]},
+        "t7": {"media": p_data["t7"]}, "t14": {"media": p_data["t14"]}, "t22": {"media": p_data["t22"]},
+        "vento": {"gfs": p_data["vento_gfs"], "icon": p_data["vento_icon"], "ecmwf": p_data["vento_ecmwf"], "media": p_data["vento_media"], "dir": p_data["dir_testo"]},
+        "smog": {"valore": p_data["pm10"], "giudizio": "Ottima" if p_data["pm10"] < 20 else "Discreta" if p_data["pm10"] < 35 else "Scadente" if p_data["pm10"] < 50 else "Pessima"}
+    }
+    
+    dati_render_mappa.append(info_capoluogo)
+    dati_tabelle_regionali[prov["regione"]][prov["nome"]] = info_capoluogo
 
 # ==========================================
-# 2. RECUPERO DATI METEO MARINI (OPEN-METEO MARINE)
+# 3. RECUPERO DATI METEO MARINI
 # ==========================================
 print("⚓ Elaborazione bollettino mari...")
 dati_mari_render = []
@@ -209,109 +157,72 @@ for i, (nome_mare, coord) in enumerate(DIZIONARIO_MARI.items()):
     dati_mari_render.append({"nome": nome_mare, "lat": coord["lat"], "lon": coord["lon"], "icona": icona_mare, "temp": round(temp_mare, 1), "testo": stato_testo, "colore_classe": hex_m})
 
 # ==========================================
-# 3. FUNZIONI GENERAZIONE TABELLE HTML
+# 4. TABELLE HTML REGIONALI
 # ==========================================
 def tabella_regionale_pioggia(regione_nome):
     html = f"<div class='scheda-meteo s-pioggia'><h3 style='margin:0 0 10px 0; color:#1f77b4; border-bottom:2px solid #1f77b4; padding-bottom:5px; font-size:14px; text-align:center;'>{regione_nome}: Precipitazioni 24h</h3>"
     html += "<table style='width:100%; border-collapse:collapse; text-align:center; font-size:11px; border:1px solid #ddd;'><tr style='background-color:#f8f9fa; font-weight:bold; height:26px;'><td>Provincia</td><td>GFS</td><td>ICON</td><td>ECMWF</td><td style='background-color:#e6f2ff;'>MEDIA</td></tr>"
     for p_nome, d in dati_tabelle_regionali.get(regione_nome, {}).items():
-        # Se c'è il temporale cambiamo l'icona e inseriamo il fulmine vicino alla provincia
-        icona_temporale = " ⛈️" if d['fulmini'] else ""
-        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{icona_temporale}</b></td><td>{d['pioggia']['gfs']}</td><td>{d['pioggia']['icon']}</td><td>{d['pioggia']['ecmwf']}</td><td style='background-color:#e6f2ff; font-weight:bold; color:#1f77b4;'>{d['pioggia']['media']} mm</td></tr>"
+        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{' ⛈️' if d['fulmini'] else ''}</b></td><td>{d['pioggia']['gfs']}</td><td>{d['pioggia']['icon']}</td><td>{d['pioggia']['ecmwf']}</td><td style='background-color:#e6f2ff; font-weight:bold; color:#1f77b4;'>{d['pioggia']['media']} mm</td></tr>"
     return html + "</table></div>"
 
 def tabella_regionale_temperatura(regione_nome):
     html = f"<div class='scheda-meteo s-temp' style='display:none;'><h3 style='margin:0 0 10px 0; color:#d62728; border-bottom:2px solid #d62728; padding-bottom:5px; font-size:14px; text-align:center;'>{regione_nome}: Temperature Medie</h3>"
     html += "<table style='width:100%; border-collapse:collapse; text-align:center; font-size:11px; border:1px solid #ddd;'><tr style='background-color:#f8f9fa; font-weight:bold; height:26px;'><td>Provincia</td><td style='color:blue;'>07:00</td><td style='color:red;'>14:00</td><td style='color:darkblue;'>22:00</td></tr>"
     for p_nome, d in dati_tabelle_regionali.get(regione_nome, {}).items():
-        icona_temporale = " ⚡" if d['fulmini'] else ""
-        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{icona_temporale}</b></td><td style='color:blue;'>{d['t7']['media']} °C</td><td style='color:red; font-weight:bold; background-color:#ffe6e6;'>{d['t14']['media']} °C</td><td style='color:darkblue;'>{d['t22']['media']} °C</td></tr>"
+        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{' ⚡' if d['fulmini'] else ''}</b></td><td style='color:blue;'>{d['t7']['media']} °C</td><td style='color:red; font-weight:bold; background-color:#ffe6e6;'>{d['t14']['media']} °C</td><td style='color:darkblue;'>{d['t22']['media']} °C</td></tr>"
     return html + "</table></div>"
 
 def tabella_regionale_vento(regione_nome):
     html = f"<div class='scheda-meteo s-vento' style='display:none;'><h3 style='margin:0 0 10px 0; color:#ff7f0e; border-bottom:2px solid #ff7f0e; padding-bottom:5px; font-size:14px; text-align:center;'>{regione_nome}: Venti e Raffiche</h3>"
     html += "<table style='width:100%; border-collapse:collapse; text-align:center; font-size:11px; border:1px solid #ddd;'><tr style='background-color:#f8f9fa; font-weight:bold; height:26px;'><td>Provincia</td><td>GFS</td><td>ICON</td><td>ECMWF</td><td style='background-color:#ffe6cc;'>MEDIA</td></tr>"
     for p_nome, d in dati_tabelle_regionali.get(regione_nome, {}).items():
-        icona_temporale = " ⚡" if d['fulmini'] else ""
-        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{icona_temporale}</b></td><td>{d['vento']['gfs']}</td><td>{d['vento']['icon']}</td><td>{d['vento']['ecmwf']}</td><td style='background-color:#ffe6cc; font-weight:bold; color:#ff7f0e;'>{d['vento']['media']} km/h ({d['vento']['dir']})</td></tr>"
+        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{' ⚡' if d['fulmini'] else ''}</b></td><td>{d['vento']['gfs']}</td><td>{d['vento']['icon']}</td><td>{d['vento']['ecmwf']}</td><td style='background-color:#ffe6cc; font-weight:bold; color:#ff7f0e;'>{d['vento']['media']} km/h ({d['vento']['dir']})</td></tr>"
     return html + "</table></div>"
 
 def tabella_regionale_smog(regione_nome):
     html = f"<div class='scheda-meteo s-smog' style='display:none;'><h3 style='margin:0 0 10px 0; color:#9467bd; border-bottom:2px solid #9467bd; padding-bottom:5px; font-size:14px; text-align:center;'>{regione_nome}: Qualità dell'Aria</h3>"
     html += "<table style='width:100%; border-collapse:collapse; text-align:center; font-size:11px; border:1px solid #ddd;'><tr style='background-color:#f8f9fa; font-weight:bold; height:26px;'><td>Provincia</td><td>PM10</td><td style='background-color:#f3e6ff;'>Stato Aria</td></tr>"
     for p_nome, d in dati_tabelle_regionali.get(regione_nome, {}).items():
-        icona_temporale = " ⚡" if d['fulmini'] else ""
-        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{icona_temporale}</b></td><td>{d['smog']['valore']} µg/m³</td><td style='background-color:#f3e6ff; font-weight:bold;'>{d['smog']['giudizio']}</td></tr>"
+        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{' ⚡' if d['fulmini'] else ''}</b></td><td>{d['smog']['valore']} µg/m³</td><td style='background-color:#f3e6ff; font-weight:bold;'>{d['smog']['giudizio']}</td></tr>"
     return html + "</table></div>"
 
 # ==========================================
-# 4. CREAZIONE MAPPA E FILTRI SFUMATI
+# 5. CREAZIONE MAPPA
 # ==========================================
-print("🗺️ Disegno della mappa interattiva in corso...")
+print("🗺️ Disegno della mappa interattiva...")
 map_italia = folium.Map(location=[42.0, 12.5], zoom_start=6, tiles="cartodbpositron")
 
 for d in dati_render_mappa:
     raggio_mappa = 45000
-    
-    hex_p = "001d58" if d["pioggia"]["media"] >= 15 else "225ea8" if d["pioggia"]["media"] >= 5 else "41b6c4" if d["pioggia"]["media"] >= 1 else "a1dab4"
-    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-pioggia sfumatura-{hex_p}").add_to(map_italia)
-    
-    t_val = d["t14"]["media"] if "t14" in d else 18.0
-    hex_t = "d73027" if t_val >= 28 else "f46d43" if t_val >= 22 else "fee08b" if t_val >= 15 else "1a9850"
-    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-temp sfumatura-{hex_t}").add_to(map_italia)
-    
-    hex_w = "d73027" if d["vento"]["media"] >= 25 else "fee090" if d["vento"]["media"] >= 10 else "e0f3f8"
-    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-vento sfumatura-{hex_w}").add_to(map_italia)
-    
-    hex_s = "f46d43" if d["smog"]["valore"] >= 40 else "fee08b" if d["smog"]["valore"] >= 20 else "66bd63"
-    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-smog sfumatura-{hex_s}").add_to(map_italia)
+    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-pioggia sfumatura-{'001d58' if d['pioggia']['media'] >= 15 else '225ea8' if d['pioggia']['media'] >= 5 else '41b6c4' if d['pioggia']['media'] >= 1 else 'a1dab4'}").add_to(map_italia)
+    t_val = d["t14"]["media"]
+    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-temp sfumatura-{'d73027' if t_val >= 28 else 'f46d43' if t_val >= 22 else 'fee08b' if t_val >= 15 else '1a9850'}").add_to(map_italia)
+    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-vento sfumatura-{'d73027' if d['vento']['media'] >= 25 else 'fee090' if d['vento']['media'] >= 10 else 'e0f3f8'}").add_to(map_italia)
+    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-smog sfumatura-{'f46d43' if d['smog']['valore'] >= 40 else 'fee08b' if d['smog']['valore'] >= 20 else '66bd63'}").add_to(map_italia)
 
-# COMPILAZIONE SIDEBAR LATERALE
 blocchi_html_tabelle = ""
 for r_nome in REGIONI_COORDINATE.keys():
     id_div_regione = r_nome.replace(" ", "-").replace("'", "-")
-    blocchi_html_tabelle += f"""
-    <div id="box-regione-{id_div_regione}" class="gruppo-regione-tabella" style="display:none;">
-        {tabella_regionale_pioggia(r_nome)}
-        {tabella_regionale_temperatura(r_nome)}
-        {tabella_regionale_vento(r_nome)}
-        {tabella_regionale_smog(r_nome)}
-    </div>
-    """
+    blocchi_html_tabelle += f'<div id="box-regione-{id_div_regione}" class="gruppo-regione-tabella" style="display:none;">{tabella_regionale_pioggia(r_nome)}{tabella_regionale_temperatura(r_nome)}{tabella_regionale_vento(r_nome)}{tabella_regionale_smog(r_nome)}</div>'
 
-# INIEZIONE DI INDICATORI CLICCABILI NATIVI CORAZZATI (I tuoi cerchietti originali)
 for r_nome, coord in REGIONI_COORDINATE.items():
     id_pulito = r_nome.replace(" ", "-").replace("'", "-")
-    
-    html_indicatore_nativo = f"""
-    <div onclick="mostraRegioneLaterale('{id_pulito}')" title="{r_nome}"
-         style="width: 24px; height: 24px; background-color: white; border: 3px solid #2c3e50; 
-                border-radius: 50%; cursor: pointer; box-shadow: 0px 2px 6px rgba(0,0,0,0.3);
-                transform: translate(-12px, -12px); z-index: 99999;">
-    </div>
-    """
-    
-    folium.Marker(
-        location=coord,
-        icon=folium.DivIcon(html=html_indicatore_nativo, icon_size=(24, 24))
-    ).add_to(map_italia)
+    html_indicatore_nativo = f'<div onclick="mostraRegioneLaterale(\'{id_pulito}\')" title="{r_nome}" style="width: 24px; height: 24px; background-color: white; border: 3px solid #2c3e50; border-radius: 50%; cursor: pointer; box-shadow: 0px 2px 6px rgba(0,0,0,0.3); transform: translate(-12px, -12px); z-index: 99999;"></div>'
+    folium.Marker(location=coord, icon=folium.DivIcon(html=html_indicatore_nativo, icon_size=(24, 24))).add_to(map_italia)
 
-# ==========================================
-# 5. STRATO MARI
-# ==========================================
 for mare in dati_mari_render:
     folium.Circle(location=[mare["lat"], mare["lon"]], radius=110000, color="transparent", weight=0, fill=True, fill_opacity=0.55, className=f"sfumatura-{mare['colore_classe']}").add_to(map_italia)
     popup_html = f"<div style='font-family: Arial, sans-serif; font-size:11px; width:180px;'><h4 style='margin:0 0 5px 0; color:#005580; border-bottom:1px solid #ccc; padding-bottom:3px;'>{mare['nome']}</h4><b>Moto Ondoso:</b> {mare['testo']}<br><b>Temp. Acqua:</b> <b>{mare['temp']} °C</b></div>"
     folium.Marker(location=[mare["lat"], mare["lon"]], icon=folium.DivIcon(html=f"<div style='font-family: Arial, sans-serif; font-size: 11px; text-align: center; font-weight: bold; color: #003366; text-shadow: 1px 1px 2px white;'><span style='font-size:16px;'>{mare['icona']}</span><br>🌡️ {mare['temp']}°C</div>"), popup=folium.Popup(popup_html, max_width=220)).add_to(map_italia)
 
 # ==========================================
-# 6. INTERFACCIA E CODICE JAVASCRIPT CORAZZATO
+# 6. INTERFACCIA INTERNA ED ELEMENTI JAVASCRIPT
 # ==========================================
 interfaccia_custom_html = """
 <style>
     .v-filtro { opacity: 0 !important; pointer-events: none !important; transition: opacity 0.2s ease; }
     .v-attivo { opacity: 0.7 !important; pointer-events: auto !important; }
-    
     .sfumatura-a1dab4 { fill: url(#grad-a1dab4) !important; } .sfumatura-41b6c4 { fill: url(#grad-41b6c4) !important; }
     .sfumatura-225ea8 { fill: url(#grad-225ea8) !important; } .sfumatura-001d58 { fill: url(#grad-001d58) !important; }
     .sfumatura-1a9850 { fill: url(#grad-1a9850) !important; } .sfumatura-fee08b { fill: url(#grad-fee08b) !important; }
@@ -319,32 +230,9 @@ interfaccia_custom_html = """
     .sfumatura-e0f3f8 { fill: url(#grad-e0f3f8) !important; } .sfumatura-fee090 { fill: url(#grad-fee090) !important; }
     .sfumatura-66bd63 { fill: url(#grad-66bd63) !important; } .sfumatura-4575b4 { fill: url(#grad-4575b4) !important; }
     
-   #sidebar-tabelle-mcspark {
-        position: fixed !important;
-        bottom: 20px !important;
-        left: 20px !important;
-        width: 320px !important;
-        height: 300px !important;
-        background: rgba(255, 255, 255, 0.95) !important;
-        border: 2px solid #2c3e50 !important;
-        border-radius: 8px !important;
-        z-index: 9999 !important;
-        font-family: Arial, sans-serif !important;
-        box-shadow: 4px 4px 15px rgba(0,0,0,0.2) !important;
-        padding: 12px !important;
-        overflow-y: auto !important;
-        display: block !important;
-        box-sizing: border-box !important;
-    }
-    .messaggio-benvenuto-sidebar { 
-        font-size: 11px !important; 
-        color: #555 !important; 
-        text-align: center !important; 
-        margin-top: 15px !important; 
-        line-height: 1.4 !important; 
-    }
-    
- #pannello-meteo-pulsanti { position: fixed; top: 20px; right: 20px; background: white; padding: 12px; border: 2px solid #2c3e50; border-radius: 8px; z-index: 9999; font-family: Arial, sans-serif; box-shadow: 4px 4px 15px rgba(0,0,0,0.2); width: 320px; box-sizing: border-box; }
+    #sidebar-tabelle-mcspark { position: fixed !important; bottom: 20px !important; left: 20px !important; width: 320px !important; height: 300px !important; background: rgba(255, 255, 255, 0.95) !important; border: 2px solid #2c3e50 !important; border-radius: 8px !important; z-index: 9999 !important; font-family: Arial, sans-serif !important; box-shadow: 4px 4px 15px rgba(0,0,0,0.2) !important; padding: 12px !important; overflow-y: auto !important; display: block !important; box-sizing: border-box !important; }
+    .messaggio-benvenuto-sidebar { font-size: 11px !important; color: #555 !important; text-align: center !important; margin-top: 15px !important; line-height: 1.4 !important; }
+    #pannello-meteo-pulsanti { position: fixed; top: 20px; right: 20px; background: white; padding: 12px; border: 2px solid #2c3e50; border-radius: 8px; z-index: 9999; font-family: Arial, sans-serif; box-shadow: 4px 4px 15px rgba(0,0,0,0.2); width: 320px; box-sizing: border-box; }
     #pannello-meteo-pulsanti h4 { margin: 0 0 10px 0; font-size: 13px; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; text-align: center; font-weight: bold; }
     .opzione-radio { display: block; margin-bottom: 8px; cursor: pointer; font-size: 12px; font-weight: bold; color: #333; }
 </style>
@@ -367,14 +255,9 @@ interfaccia_custom_html = """
 <div id="sidebar-tabelle-mcspark">
     <div id="contenitore-vuoto-sidebar">
         <h2 style='text-align:center; color:#2c3e50; font-size:15px; margin-top:5px;'>📊 Report Dettagliato</h2>
-        <div class="messaggio-benvenuto-sidebar">
-            <span style="font-size: 24px;">🗺️</span><br><br>
-            <b>Clicca direttamente sul cerchietto vicino alla regione</b> per vederne istantaneamente i dati provinciali completi qui a sinistra.
-        </div>
+        <div class="messaggio-benvenuto-sidebar"><span style="font-size: 24px;">🗺️</span><br><br><b>Clicca direttamente sul cerchietto vicino alla regione</b> per vederne istantaneamente i dati provinciali completi qui a sinistra.</div>
     </div>
-    <div id="contenitore-tabelle-attive-sidebar" style="display:none;">
-""" + blocchi_html_tabelle + """
-    </div>
+    <div id="contenitore-tabelle-attive-sidebar" style="display:none;">""" + blocchi_html_tabelle + """</div>
 </div>
 
 <div id="pannello-meteo-pulsanti">
@@ -386,115 +269,43 @@ interfaccia_custom_html = """
 </div>
 
 <script>
-var filtroAttuale = 'pioggia';
-var ultimaRegioneAperta = null;
-
+var filtroAttuale = 'pioggia'; var ultimaRegioneAperta = null;
 function mostraRegioneLaterale(idRegione) {
-    ultimaRegioneAperta = idRegione;
-    
-    document.getElementById('contenitore-vuoto-sidebar').style.display = 'none';
-    document.getElementById('contenitore-tabelle-attive-sidebar').style.display = 'block';
-    
-    var tuttiIBox = document.getElementsByClassName('gruppo-regione-tabella');
-    for (var i = 0; i < tuttiIBox.length; i++) {
-        tuttiIBox[i].style.display = 'none';
-    }
-    
+    ultimaRegioneAperta = idRegione; document.getElementById('contenitore-vuoto-sidebar').style.display = 'none'; document.getElementById('contenitore-tabelle-attive-sidebar').style.display = 'block';
+    var tuttiIBox = document.getElementsByClassName('gruppo-regione-tabella'); for (var i = 0; i < tuttiIBox.length; i++) { tuttiIBox[i].style.display = 'none'; }
     var boxAttivo = document.getElementById('box-regione-' + idRegione);
-    if(boxAttivo) {
-        boxAttivo.style.display = 'block';
-        
-        var tutteLeSchede = boxAttivo.getElementsByClassName('scheda-meteo');
-        for (var j = 0; j < tutteLeSchede.length; j++) {
-            tutteLeSchede[j].style.display = 'none';
-        }
-        
-        var schedeDaMostrare = boxAttivo.getElementsByClassName('s-' + filtroAttuale);
-        for (var k = 0; k < schedeDaMostrare.length; k++) {
-            schedeDaMostrare[k].style.display = 'block';
-        }
-    }
+    if(boxAttivo) { boxAttivo.style.display = 'block'; var tutteLeSchede = boxAttivo.getElementsByClassName('scheda-meteo'); for (var j = 0; j < tutteLeSchede.length; j++) { tutteLeSchede[j].style.display = 'none'; } var schedeDaMostrare = boxAttivo.getElementsByClassName('s-' + filtroAttuale); for (var k = 0; k < schedeDaMostrare.length; k++) { schedeDaMostrare[k].style.display = 'block'; } }
 }
-
 function aggiornaMappaEInvolucri(valoreFiltro) {
-    filtroAttuale = valoreFiltro;
-    
-    var tuttiIFiltri = document.getElementsByClassName('v-filtro');
-    for (var i = 0; i < tuttiIFiltri.length; i++) {
-        tuttiIFiltri[i].classList.remove('v-attivo');
-    }
-    
-    var filtriDaAttivare = document.getElementsByClassName('v-' + valoreFiltro);
-    for (var j = 0; j < filtriDaAttivare.length; j++) {
-        filtriDaAttivare[j].classList.add('v-attivo');
-    }
-    
-    if(ultimaRegioneAperta) {
-        mostraRegioneLaterale(ultimaRegioneAperta);
-    }
+    filtroAttuale = valoreFiltro; var tuttiIFiltri = document.getElementsByClassName('v-filtro'); for (var i = 0; i < tuttiIFiltri.length; i++) { tuttiIFiltri[i].classList.remove('v-attivo'); }
+    var filtriDaAttivare = document.getElementsByClassName('v-' + valoreFiltro); for (var j = 0; j < filtriDaAttivare.length; j++) { filtriDaAttivare[j].classList.add('v-attivo'); }
+    if(ultimaRegioneAperta) { mostraRegioneLaterale(ultimaRegioneAperta); }
 }
-
-var radioButtons = document.getElementsByName('filtro-global');
-for (var i = 0; i < radioButtons.length; i++) {
-    radioButtons[i].addEventListener('change', function(e) {
-        aggiornaMappaEInvolucri(e.target.value);
-    });
-}
-
+var radioButtons = document.getElementsByName('filtro-global'); for (var i = 0; i < radioButtons.length; i++) { radioButtons[i].addEventListener('change', function(e) { aggiornaMappaEInvolucri(e.target.value); }); }
 setTimeout(function() { aggiornaMappaEInvolucri('pioggia'); }, 300);
 </script>
 """
 map_italia.get_root().html.add_child(folium.Element(interfaccia_custom_html))
 
-# LOGO E DIRITTI CON TIMESTAMPS
 branding_html = (
-    f'<div style="position: fixed; bottom: 35px; right: 20px; width: 60px; height: auto; z-index: 9999; border: 1px solid #2c3e50; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">'
-    f'  <img src="{FILE_LOGO_LOCAL}" style="width:100%; display:block;">'
-    f'</div>'
-    
-    f'<div style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); background-color: rgba(255,255,255,0.9); padding: 4px 10px; border-radius: 4px; z-index: 9999; font-family: Arial, sans-serif; font-size: 10px; color: #333; border: 1px solid #ccc; box-shadow: 0px 2px 5px rgba(0,0,0,0.1); text-align: center; white-space: nowrap;">'
-    f'  <b>{COPYRIGHT}</b> | <span style="color:#666;">{FONTE_DATI}</span> | <span style="color:#005580; font-weight:bold;">{STRINGA_AGGIORNAMENTO}</span>'
-    f'</div>'
+    f'<div style="position: fixed; bottom: 35px; right: 20px; width: 60px; height: auto; z-index: 9999; border: 1px solid #2c3e50; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.2);"><img src="{FILE_LOGO_LOCAL}" style="width:100%; display:block;"></div>'
+    f'<div style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); background-color: rgba(255,255,255,0.9); padding: 4px 10px; border-radius: 4px; z-index: 9999; font-family: Arial, sans-serif; font-size: 10px; color: #333; border: 1px solid #ccc; box-shadow: 0px 2px 5px rgba(0,0,0,0.1); text-align: center; white-space: nowrap;"><b>{COPYRIGHT}</b> | <span style="color:#666;">{FONTE_DATI}</span> | <span style="color:#005580; font-weight:bold;">{STRINGA_AGGIORNAMENTO}</span></div>'
 )
 map_italia.get_root().html.add_child(folium.Element(branding_html))
 
-# FORZATURA CODICE RESPONSIVE SMARTPHONE (Risolto bug graffa mancante e rimosse ripetizioni inutili)
+# FORZATURA STRUTTURA SMARTPHONE RESPONSIVE (CON GRAFFA CORRECT)
 stile_smartphone = """
 <style>
 @media (max-width: 600px) {
-    #sidebar-tabelle-mcspark {
-        width: 100% !important;
-        height: 230px !important;
-        left: 0 !important;
-        bottom: 0 !important;
-        border-radius: 12px 12px 0 0 !important;
-        border-width: 2px 0 0 0 !important;
-        z-index: 99999 !important;
-    }
-    #pannello-meteo-pulsanti {
-        top: 10px !important;
-        right: 10px !important;
-        width: 160px !important;
-        padding: 5px !important;
-        z-index: 99999 !important;
-    }
-    .opzione-radio { 
-        display: block; 
-        margin-bottom: 8px; 
-        cursor: pointer; 
-        font-size: 12px; 
-        font-weight: bold; 
-        color: #333; 
-    }
+    #sidebar-tabelle-mcspark { width: 100% !important; height: 230px !important; left: 0 !important; bottom: 0 !important; border-radius: 12px 12px 0 0 !important; border-width: 2px 0 0 0 !important; z-index: 99999 !important; }
+    #pannello-meteo-pulsanti { top: 10px !important; right: 10px !important; width: 160px !important; padding: 5px !important; z-index: 99999 !important; }
+    .opzione-radio { display: block; margin-bottom: 8px; cursor: pointer; font-size: 12px; font-weight: bold; color: #333; }
 }
 </style>
 """
 map_italia.get_root().html.add_child(folium.Element(stile_smartphone))
 
-# Costringe la mappa a inquadrare l'Italia intera all'avvio
 map_italia.fit_bounds([[36.0, 6.0], [47.5, 18.5]])
-
-# Salvataggio finale sicuro
 map_italia.save("index.html")
 
-print(f"✅ Interfaccia completata e salvata con successo: {STRINGA_AGGIORNAMENTO}")
+print(f"✅ Interfaccia completata in blocco con successo: {STRINGA_AGGIORNAMENTO}")
