@@ -3,10 +3,10 @@ name: Aggiornamento Automatico McSpark Meteo
 on:
   push:
     branches: [main]
-
   schedule:
-    - cron: '30 4,10,16 * * *'
-
+    - cron: '15 4 * * *'
+    - cron: '15 10 * * *'
+    - cron: '15 16 * * *'
   workflow_dispatch:
 
 permissions:
