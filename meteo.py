@@ -6,7 +6,7 @@ from datetime import datetime
 import zoneinfo
 from province_italia import PROVINCE_BY_REGIONE, REGIONI_COORDINATE
 
-# ==========================================
+# ===========================================
 # CONFIGURAZIONE, TIMESTAMP E BRANDING
 # ==========================================
 NOME_SITO = "McSpark Meteo"
