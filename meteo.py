@@ -362,9 +362,9 @@ stile_smartphone = """
 
 map_italia.get_root().html.add_child(folium.Element(stile_smartphone))
 # Legenda dinamica data previsione
-# Legenda dinamica data previsione (Spostata a destra)
+# Legenda dinamica data previsione (Posizionamento assoluto a destra)
 legenda_data_html = f'''
-<div style="position: fixed; top: 80px; right: 20px; background-color: rgba(200, 0, 0, 0.85); color: white; padding: 6px 16px; border-radius: 20px; z-index: 9999; font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; border: 2px solid white; box-shadow: 0px 3px 8px rgba(0,0,0,0.4); pointer-events: none;">
+<div style="position: fixed !important; top: 80px !important; right: 20px !important; background-color: rgba(200, 0, 0, 0.85); color: white; padding: 6px 16px; border-radius: 20px; z-index: 99999 !important; font-family: Arial, sans-serif !important; font-size: 14px !important; font-weight: bold; border: 2px solid white; box-shadow: 0px 3px 8px rgba(0,0,0,0.4); pointer-events: none;">
   📅 Previsione valida per il: {DATA_VALIDITA}
 </div>
 '''
