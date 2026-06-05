@@ -202,7 +202,7 @@ map_italia = folium.Map(location=[42.0, 12.5], zoom_start=6, tiles="cartodbposit
 
 # Crea la variabile che contiene il tuo HTML
 legenda_data_html = f'''
-<div style="position: absolute !important; top: 200px !important; left: 540px !important; background-color: rgba(200, 0, 0, 0.85); color: white; padding: 6px 16px; border-radius: 20px; z-index: 9999 !important; font-family: Arial, sans-serif !important; font-size: 14px !important; font-weight: bold; border: 2px solid white; box-shadow: 0px 3px 8px rgba(0,0,0,0.4); pointer-events: none;">
+<div style="position: absolute !important; top: 180px !important; left: 640px !important; background-color: rgba(200, 0, 0, 0.85); color: white; padding: 6px 16px; border-radius: 20px; z-index: 9999 !important; font-family: Arial, sans-serif !important; font-size: 14px !important; font-weight: bold; border: 2px solid white; box-shadow: 0px 3px 8px rgba(0,0,0,0.4); pointer-events: none;">
   📅 Previsione valida per il: {DATA_VALIDITA}
 </div>
 '''
