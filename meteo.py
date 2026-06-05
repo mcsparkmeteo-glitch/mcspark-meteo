@@ -198,7 +198,17 @@ def tabella_regionale_smog(regione_nome):
 # ==========================================
 print("🗺️ Disegno della mappa interattiva in corso...")
 map_italia = folium.Map(location=[42.0, 12.5], zoom_start=6, tiles="cartodbpositron")
+map_italia = folium.Map(location=[42.0, 12.5], zoom_start=6, tiles="cartodbpositron")
 
+# Incolla qui il blocco della legenda che avevi prima:
+legenda_data_html = f'''
+<div style="position: fixed !important; top: 80px !important; right: 20px !important; background-color: rgba(200, 0, 0, 0.85); color: white; padding: 6px 16px; border-radius: 20px; z-index: 99999 !important; font-family: Arial, sans-serif !important; font-size: 14px !important; font-weight: bold; border: 2px solid white; box-shadow: 0px 3px 8px rgba(0,0,0,0.4); pointer-events: none;">
+  📅 Previsione valida per il: {DATA_VALIDITA}
+</div>
+'''
+map_italia.get_root().html.add_child(folium.Element(legenda_data_html))
+
+# ... poi il resto del codice prosegue come prima ...
 for d in dati_render_mappa:
     raggio_mappa = 45000
     hex_p = "001d58" if d["pioggia"]["media"] >= 15 else "225ea8" if d["pioggia"]["media"] >= 5 else "41b6c4" if d["pioggia"]["media"] >= 1 else "a1dab4"
@@ -361,14 +371,7 @@ stile_smartphone = """
  """ 
 
 map_italia.get_root().html.add_child(folium.Element(stile_smartphone))
-# Legenda dinamica data previsione
-# Legenda dinamica data previsione (Posizionamento assoluto a destra)
-legenda_data_html = f'''
-<div style="position: fixed !important; top: 80px !important; right: 20px !important; background-color: rgba(200, 0, 0, 0.85); color: white; padding: 6px 16px; border-radius: 20px; z-index: 99999 !important; font-family: Arial, sans-serif !important; font-size: 14px !important; font-weight: bold; border: 2px solid white; box-shadow: 0px 3px 8px rgba(0,0,0,0.4); pointer-events: none;">
-  📅 Previsione valida per il: {DATA_VALIDITA}
-</div>
-'''
-map_italia.get_root().html.add_child(folium.Element(legenda_data_html))
+
 map_italia.save("index.html")
 
 print(f"✅ Interfaccia completata in modo nativo e sicuro: {STRINGA_AGGIORNAMENTO}")
