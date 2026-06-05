@@ -2,7 +2,7 @@ import os
 import requests
 import folium
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import zoneinfo
 from province_italia import PROVINCE_BY_REGIONE, REGIONI_COORDINATE
 
@@ -14,8 +14,14 @@ COPYRIGHT = f"© 2026 {NOME_SITO} - Tutti i diritti riservati"
 FONTE_DATI = "Dati: WeatherAPI Realtime & Forecast Models (GFS/ECMWF)"
 FILE_LOGO_LOCAL = "unnamed.jpg"
 
-# Calcolo automatico del fuso orario italiano per i server GitHub
+# Calcolo automatico del fuso orario italiano
 ora_italiana = datetime.now(zoneinfo.ZoneInfo("Europe/Rome"))
+
+# Calcolo data di validità (domani)
+domani = ora_italiana + timedelta(days=1)
+DATA_VALIDITA = domani.strftime("%d/%m/%Y")
+
+# Stringa per il footer
 STRINGA_AGGIORNAMENTO = ora_italiana.strftime("Aggiornato il: %d/%m/%Y alle %H:%M")
 
 print(f"🌊✨ McSpark Meteo: Avvio iniezione dati ({STRINGA_AGGIORNAMENTO})...")
@@ -355,6 +361,13 @@ stile_smartphone = """
  """ 
 
 map_italia.get_root().html.add_child(folium.Element(stile_smartphone))
+# Legenda dinamica data previsione
+legenda_data_html = f'''
+<div style="position: fixed; top: 15px; left: 50%; transform: translateX(-50%); background-color: rgba(200, 0, 0, 0.85); color: white; padding: 6px 16px; border-radius: 20px; z-index: 9999; font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; border: 2px solid white; box-shadow: 0px 3px 8px rgba(0,0,0,0.4); pointer-events: none;">
+  📅 Previsione valida per il: {DATA_VALIDITA}
+</div>
+'''
+map_italia.get_root().html.add_child(folium.Element(legenda_data_html))
 map_italia.save("index.html")
 
 print(f"✅ Interfaccia completata in modo nativo e sicuro: {STRINGA_AGGIORNAMENTO}")
