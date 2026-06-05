@@ -198,16 +198,17 @@ def tabella_regionale_smog(regione_nome):
 # ==========================================
 print("🗺️ Disegno della mappa interattiva in corso...")
 map_italia = folium.Map(location=[42.0, 12.5], zoom_start=6, tiles="cartodbpositron")
-map_italia = folium.Map(location=[42.0, 12.5], zoom_start=6, tiles="cartodbpositron")
 
-# Incolla qui il blocco della legenda che avevi prima:
-# Legenda dinamica - Posizionamento forzato in alto a destra, fuori dai box
+
+# Crea la variabile che contiene il tuo HTML
 legenda_data_html = f'''
-<div style="position: absolute !important; top: 10px !important; right: 10px !important; background-color: rgba(200, 0, 0, 0.85); color: white; padding: 6px 16px; border-radius: 20px; z-index: 1000 !important; font-family: Arial, sans-serif !important; font-size: 14px !important; font-weight: bold; border: 2px solid white; box-shadow: 0px 3px 8px rgba(0,0,0,0.4); pointer-events: none;">
+<div style="position: absolute !important; top: 150px !important; left: 10px !important; background-color: rgba(200, 0, 0, 0.85); color: white; padding: 6px 16px; border-radius: 20px; z-index: 9999 !important; font-family: Arial, sans-serif !important; font-size: 14px !important; font-weight: bold; border: 2px solid white; box-shadow: 0px 3px 8px rgba(0,0,0,0.4);">
   📅 Previsione valida per il: {DATA_VALIDITA}
 </div>
 '''
-map_italia.get_root().add_child(folium.Element(legenda_data_html))
+
+# Aggiungilo alla mappa
+map_italia.get_root().html.add_child(folium.Element(legenda_data_html))
 
 # ... poi il resto del codice prosegue come prima ...
 for d in dati_render_mappa:
@@ -372,7 +373,7 @@ stile_smartphone = """
  """ 
 
 map_italia.get_root().html.add_child(folium.Element(stile_smartphone))
-map_italia.get_root().html.add_child(folium.Element(legenda_data_html))
+
 map_italia.save("index.html")
 
 print(f"✅ Interfaccia completata in modo nativo e sicuro: {STRINGA_AGGIORNAMENTO}")
