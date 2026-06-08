@@ -262,7 +262,6 @@ legenda_data_html = f'''
     Previsione valida per il: {DATA_VALIDITA}
 </div>
 '''
-map_italia.get_root().html.add_child(folium.Element(legenda_data_html))
 
 map_italia.get_root().html.add_child(folium.Element(legenda_data_html))
 
