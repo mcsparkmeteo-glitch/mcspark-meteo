@@ -247,7 +247,7 @@ legenda_data_html = f'''
 <div style="
     position: absolute;
     top: 210px;
-    right: 1035px;
+    left: 1035px;
     background-color: rgba(200, 0, 0, 0.85);
     color: white;
     padding: 6px 16px;
