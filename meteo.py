@@ -244,7 +244,7 @@ map_italia = folium.Map(location=[42.0, 12.5], zoom_start=6, tiles="cartodbposit
 
 # Badge data validità
 legenda_data_html = f'''
-<div style="position: absolute !important; top: 210px !important; left: 1035px !important; background-color: rgba(200, 0, 0, 0.85); color: white; padding: 6px 16px; border-radius: 20px; z-index: 9999 !important; font-family: Arial, sans-serif !important; font-size: 14px !important; font-weight: bold; border: 2px solid white; box-shadow: 0px 3px 8px rgba(0,0,0,0.4); pointer-events: none;">
+<div style="position: absolute !important; top: 230px !important; left: 1035px !important; background-color: rgba(200, 0, 0, 0.85); color: white; padding: 6px 16px; border-radius: 20px; z-index: 9999 !important; font-family: Arial, sans-serif !important; font-size: 14px !important; font-weight: bold; border: 2px solid white; box-shadow: 0px 3px 8px rgba(0,0,0,0.4); pointer-events: none;">
  Previsione valida per il: {DATA_VALIDITA}
 </div>
 '''
