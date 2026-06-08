@@ -264,7 +264,14 @@ legenda_data_html = f'''
 '''
 
 map_italia.get_root().html.add_child(folium.Element(legenda_data_html))
-
+# Forza visibilità overflow nell'iframe della mappa
+map_italia.get_root().header.add_child(folium.Element("""
+<style>
+iframe {
+  overflow: visible !important;
+}
+</style>
+"""))
 for d in dati_render_mappa:
     raggio_mappa = 45000
     hex_p = "001d58" if d["pioggia"]["media"] >= 15 else "225ea8" if d["pioggia"]["media"] >= 5 else "41b6c4" if d["pioggia"]["media"] >= 1 else "a1dab4"
