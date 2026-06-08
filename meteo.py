@@ -27,7 +27,8 @@ STRINGA_AGGIORNAMENTO = ora_italiana.strftime("Aggiornato il: %d/%m/%Y alle %H:%
 print(f"🌊✨ McSpark Meteo: Avvio iniezione dati ({STRINGA_AGGIORNAMENTO})...")
 
 # Recupero sicuro della chiave API dai Secrets di GitHub
-API_KEY = os.getenv("WEATHER_API_KEY")
+API_KEY = "eca968be0d38479d87e193151260106"
+
 
 # ==========================================
 # COORDINATE DEI MARI ITALIANI
@@ -60,73 +61,108 @@ for regione, elenco in PROVINCE_BY_REGIONE.items():
         lat_float = float(p["lat"])
         lon_float = float(p["lon"])
         
+        # valori di fallback
         base_t7 = 14.0
         base_t14 = 22.0
         base_t22 = 17.0
         base_prec = 0.0
         base_wind = 10.0
         base_pm10 = 15.0
+        base_uv = 0.0
         dir_testo = "N"
         ha_fulmini = False
-        
+
+        # 🔥 IL BLOCCO API DEVE STARE QUI
+        print("DEBUG: API_KEY =", repr(API_KEY))
+
         if API_KEY:
             try:
-                url = f"http://api.weatherapi.com/v1/forecast.json?key={API_KEY}&q={lat_float},{lon_float}&days=2&aqi=yes&alerts=no"
+                print("DEBUG: Avvio chiamata API")
+                url = (
+                    f"http://api.weatherapi.com/v1/forecast.json?"
+                    f"key={API_KEY}&q={lat_float},{lon_float}&days=2&aqi=yes&alerts=no"
+                )
                 res = requests.get(url, timeout=10).json()
-                
-                if "forecast" in res:
-                    base_prec = float(res["forecast"]["forecastday"][1]["day"]["totalprecip_mm"])
-                    ore_totali = res["forecast"]["forecastday"][1]["hour"]
-                    base_t7 = float(ore_totali[7]["temp_c"])
-                    base_t14 = float(ore_totali[14]["temp_c"])
-                    base_t22 = float(ore_totali[22]["temp_c"])
-                    base_wind = float(res["forecast"]["forecastday"][1]["day"]["maxwind_kph"])
-                    dir_testo = str(ore_totali[14]["wind_dir"])
-                    
-                    codici_temporale = [1087, 1273, 1276, 1279, 1282]
-                    for ora in ore_totali:
-                        codice_ora = int(ora["condition"]["code"])
-                        if codice_ora in codici_temporale:
-                            ha_fulmini = True
-                            break 
-                    
-                    if "air_quality" in res["current"] and "pm10" in res["current"]["air_quality"]:
-                        base_pm10 = float(res["current"]["air_quality"]["pm10"])
-            except Exception as e:
-                print(f"⚠️ Errore nel recupero dati per {nome_provincia}, uso paracadute.")
-        
-        time.sleep(0.1)
 
+                print(f"✅ {nome_provincia}: forecast con {len(res['forecast']['forecastday'][1]['hour'])} ore")
+
+                
+
+                if "forecast" not in res or "forecastday" not in res["forecast"]:
+                    raise ValueError("Forecast mancante")
+
+                giorni = res["forecast"]["forecastday"]
+                if len(giorni) < 2:
+                    raise ValueError("Forecast incompleto (manca il giorno 1)")
+
+                giorno = giorni[1]
+
+                base_prec = float(giorno["day"]["totalprecip_mm"])
+                ore_totali = giorno["hour"]
+
+                base_t7 = float(ore_totali[7]["temp_c"])
+                base_t14 = float(ore_totali[14]["temp_c"])
+                base_t22 = float(ore_totali[22]["temp_c"])
+
+                base_wind = float(giorno["day"]["maxwind_kph"])
+                dir_testo = str(ore_totali[14]["wind_dir"])
+                base_uv = float(giorno["day"]["uv"])
+
+                ha_fulmini = any(
+                    int(ora["condition"]["code"]) in [1087, 1273, 1276, 1279, 1282]
+                    for ora in ore_totali
+                )
+
+                base_pm10 = float(res["current"]["air_quality"].get("pm10", 15))
+
+            except Exception as e:
+                print(f"⚠️ Errore nel recupero dati per {nome_provincia}: {e}")
+                time.sleep(0.1)
+
+        # 🔥 QUESTO DEVE STARE DENTRO IL CICLO
         info_capoluogo = {
-            "nome": nome_provincia, 
-            "tipo": "capoluogo", 
-            "regione": regione, 
-            "lat": lat_float, 
-            "lon": lon_float, 
+            "nome": nome_provincia,
+            "tipo": "capoluogo",
+            "regione": regione,
+            "lat": lat_float,
+            "lon": lon_float,
             "fulmini": ha_fulmini,
             "pioggia": {
-                "gfs": round(base_prec * 0.9, 1), 
-                "icon": round(base_prec * 1.1, 1), 
-                "ecmwf": round(base_prec, 1), 
+                "gfs": round(base_prec * 0.9, 1),
+                "icon": round(base_prec * 1.1, 1),
+                "ecmwf": round(base_prec, 1),
                 "media": round(base_prec, 1)
             },
-            "t7": {"media": round(base_t7, 1)}, 
-            "t14": {"media": round(base_t14, 1)}, 
+            "t7": {"media": round(base_t7, 1)},
+            "t14": {"media": round(base_t14, 1)},
             "t22": {"media": round(base_t22, 1)},
             "vento": {
-                "gfs": round(base_wind * 0.95, 1), 
-                "icon": round(base_wind * 1.05, 1), 
-                "ecmwf": round(base_wind, 1), 
-                "media": round(base_wind, 1), 
+                "gfs": round(base_wind * 0.95, 1),
+                "icon": round(base_wind * 1.05, 1),
+                "ecmwf": round(base_wind, 1),
+                "media": round(base_wind, 1),
                 "dir": dir_testo
             },
             "smog": {
-                "valore": round(base_pm10, 1), 
-                "giudizio": "Ottima" if base_pm10 < 20 else "Discreta" if base_pm10 < 35 else "Scadente" if base_pm10 < 50 else "Pessima"
+                "valore": round(base_pm10, 1),
+                "giudizio": "Ottima" if base_pm10 < 20 else
+                            "Discreta" if base_pm10 < 35 else
+                            "Scadente" if base_pm10 < 50 else
+                            "Pessima"
+            },
+            "uv": {
+                "valore": round(base_uv, 1),
+                "giudizio": "Basso" if base_uv < 3 else
+                            "Moderato" if base_uv < 6 else
+                            "Alto" if base_uv < 8 else
+                            "Molto Alto"
             }
         }
+
         dati_render_mappa.append(info_capoluogo)
         dati_tabelle_regionali[regione][nome_provincia] = info_capoluogo
+
+ 
 
 # ==========================================
 # 2. RECUPERO DATI METEO MARINI
@@ -193,24 +229,27 @@ def tabella_regionale_smog(regione_nome):
         html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{' ⚡' if d['fulmini'] else ''}</b></td><td>{d['smog']['valore']} µg/m³</td><td style='background-color:#f3e6ff; font-weight:bold;'>{d['smog']['giudizio']}</td></tr>"
     return html + "</table></div>"
 
+def tabella_regionale_uv(regione_nome):
+    html = f"<div class='scheda-meteo s-uv' style='display:none;'><h3 style='margin:0 0 10px 0; color:#ff00aa; border-bottom:2px solid #ff00aa; padding-bottom:5px; font-size:14px; text-align:center;'>{regione_nome}: Indice UV</h3>"
+    html += "<table style='width:100%; border-collapse:collapse; text-align:center; font-size:11px; border:1px solid #ddd;'><tr style='background-color:#f8f9fa; font-weight:bold; height:26px;'><td>Provincia</td><td>UV</td><td style='background-color:#ffe6ff;'>Giudizio</td></tr>"
+    for p_nome, d in dati_tabelle_regionali.get(regione_nome, {}).items():
+        html += f"<tr style='border-bottom:1px solid #eee; height:26px;'><td><b>{p_nome}{' ⚡' if d['fulmini'] else ''}</b></td><td>{d['uv']['valore']}</td><td style='background-color:#ffe6ff; font-weight:bold;'>{d['uv']['giudizio']}</td></tr>"
+    return html + "</table></div>"
+
 # ==========================================
 # 4. CREAZIONE MAPPA E FILTRI SFUMATI
 # ==========================================
 print("🗺️ Disegno della mappa interattiva in corso...")
 map_italia = folium.Map(location=[42.0, 12.5], zoom_start=6, tiles="cartodbpositron")
 
-
-# Crea la variabile che contiene il tuo HTML
+# Badge data validità
 legenda_data_html = f'''
-<div style="position: absolute !important; top: 200px !important; left: 570px !important; background-color: rgba(200, 0, 0, 0.85); color: white; padding: 6px 16px; border-radius: 20px; z-index: 9999 !important; font-family: Arial, sans-serif !important; font-size: 14px !important; font-weight: bold; border: 2px solid white; box-shadow: 0px 3px 8px rgba(0,0,0,0.4); pointer-events: none;">
+<div style="position: absolute !important; top: 210px !important; left: 1035px !important; background-color: rgba(200, 0, 0, 0.85); color: white; padding: 6px 16px; border-radius: 20px; z-index: 9999 !important; font-family: Arial, sans-serif !important; font-size: 14px !important; font-weight: bold; border: 2px solid white; box-shadow: 0px 3px 8px rgba(0,0,0,0.4); pointer-events: none;">
  Previsione valida per il: {DATA_VALIDITA}
 </div>
 '''
-
-# Aggiungilo alla mappa
 map_italia.get_root().html.add_child(folium.Element(legenda_data_html))
 
-# ... poi il resto del codice prosegue come prima ...
 for d in dati_render_mappa:
     raggio_mappa = 45000
     hex_p = "001d58" if d["pioggia"]["media"] >= 15 else "225ea8" if d["pioggia"]["media"] >= 5 else "41b6c4" if d["pioggia"]["media"] >= 1 else "a1dab4"
@@ -226,6 +265,9 @@ for d in dati_render_mappa:
     hex_s = "f46d43" if d["smog"]["valore"] >= 40 else "fee08b" if d["smog"]["valore"] >= 20 else "66bd63"
     folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-smog sfumatura-{hex_s}").add_to(map_italia)
 
+    hex_uv = "66bd63" if d["uv"]["valore"] < 3 else "fee08b" if d["uv"]["valore"] < 6 else "f46d43" if d["uv"]["valore"] < 8 else "d73027"
+    folium.Circle(location=[d["lat"], d["lon"]], radius=raggio_mappa, color="transparent", weight=0, fill=True, fill_opacity=0.7, className=f"v-filtro v-uv sfumatura-{hex_uv}").add_to(map_italia)
+
 blocchi_html_tabelle = ""
 for r_nome in REGIONI_COORDINATE.keys():
     id_div_regione = r_nome.replace(" ", "-").replace("'", "-")
@@ -235,6 +277,7 @@ for r_nome in REGIONI_COORDINATE.keys():
         {tabella_regionale_temperatura(r_nome)}
         {tabella_regionale_vento(r_nome)}
         {tabella_regionale_smog(r_nome)}
+        {tabella_regionale_uv(r_nome)}
     </div>
     """
 
@@ -303,6 +346,7 @@ interfaccia_custom_html = """
     <label class="opzione-radio"><input type="radio" name="filtro-global" value="temp">🌡️ Temperature (07-14-22)</label>
     <label class="opzione-radio"><input type="radio" name="filtro-global" value="vento">💨 Vento e Raffiche</label>
     <label class="opzione-radio"><input type="radio" name="filtro-global" value="smog">😷 Qualità dell'Aria (Smog)</label>
+    <label class="opzione-radio"><input type="radio" name="filtro-global" value="uv">☀️ Indice UV</label>
 </div>
 <script>
 var filtroAttuale = 'pioggia';
@@ -351,23 +395,23 @@ map_italia.get_root().html.add_child(folium.Element(branding_html))
 stile_smartphone = """ 
  <style> 
  @media (max-width: 600px) { 
-     #sidebar-tabelle-mcspark { 
-         width: 100% !important; 
-         height: 230px !important; 
-         left: 0 !important; 
-         bottom: 0 !important; 
-         border-radius: 12px 12px 0 0 !important; 
-         border-width: 2px 0 0 0 !important; 
-         z-index: 99999 !important; 
-     } 
-     #pannello-meteo-pulsanti { 
-         top: 10px !important; 
-         right: 10px !important; 
-         width: 160px !important; 
-         padding: 5px !important; 
-         z-index: 99999 !important; 
-     } 
-     .opzione-radio { display: block; margin-bottom: 8px; cursor: pointer; font-size: 12px; font-weight: bold; color: #333; } 
+     #sidebar-tabelle-mcspark { 
+         width: 100% !important; 
+         height: 230px !important; 
+         left: 0 !important; 
+         bottom: 0 !important; 
+         border-radius: 12px 12px 0 0 !important; 
+         border-width: 2px 0 0 0 !important; 
+         z-index: 99999 !important; 
+     } 
+     #pannello-meteo-pulsanti { 
+         top: 10px !important; 
+         right: 10px !important; 
+         width: 160px !important; 
+         padding: 5px !important; 
+         z-index: 99999 !important; 
+     } 
+     .opzione-radio { display: block; margin-bottom: 8px; cursor: pointer; font-size: 12px; font-weight: bold; color: #333; } 
  } 
  </style> 
  """ 
