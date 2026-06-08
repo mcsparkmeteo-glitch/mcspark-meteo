@@ -246,8 +246,8 @@ map_italia = folium.Map(location=[42.0, 12.5], zoom_start=6, tiles="cartodbposit
 legenda_data_html = f'''
 <div style="
     position: fixed;
-    top: 120px;
-    right: 40px;
+    top: 210px;
+    right: 1035px;
     background-color: rgba(200, 0, 0, 0.85);
     color: white;
     padding: 6px 16px;
