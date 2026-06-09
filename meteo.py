@@ -265,8 +265,6 @@ legenda_data_html = f'''
 
 map_italia.get_root().html.add_child(folium.Element(legenda_data_html))
 # Forza visibilità overflow nell'iframe della mappa
-map_italia.get_root().header.add_child(folium.Element(blocchi_html_tabelle))
-# Forza visibilità overflow nell'iframe della mappa
 map_italia.get_root().header.add_child(folium.Element("""
 <style>
 html, body, iframe {
