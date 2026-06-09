@@ -301,6 +301,8 @@ html, body, iframe {
   .report-dettagliato {
     position: relative !important;
     margin-top: -40px !important;
+    z-index: 9999 !important;
+    transform: translateY(-40px) !important; /* forza lo spostamento visivo */
   }
 }
 </style>
