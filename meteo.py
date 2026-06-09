@@ -244,7 +244,7 @@ map_italia = folium.Map(location=[42.0, 12.5], zoom_start=6, tiles="cartodbposit
 
 # Badge data validità
 legenda_data_html = f'''
-<div style="
+<div class="banner-validita" style="
     position: absolute;
     top: 217px;
     left: 460px;
@@ -270,8 +270,26 @@ map_italia.get_root().header.add_child(folium.Element("""
 html, body, iframe {
   overflow: visible !important;
 }
+
+/* ✅ Regole per desktop */
+.banner-validita {
+  position: absolute;
+  top: 217px;
+  left: 460px;
+  transform: scale(1);
+}
+
+/* ✅ Regole per smartphone */
+@media (max-width: 768px) {
+  .banner-validita {
+    top: 250px !important;
+    left: 150px !important;
+    transform: scale(0.9);
+  }
+}
 </style>
 """))
+
 for d in dati_render_mappa:
     raggio_mappa = 45000
     hex_p = "001d58" if d["pioggia"]["media"] >= 15 else "225ea8" if d["pioggia"]["media"] >= 5 else "41b6c4" if d["pioggia"]["media"] >= 1 else "a1dab4"
