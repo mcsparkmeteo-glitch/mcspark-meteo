@@ -517,7 +517,7 @@ stile_smartphone = """
 
 map_italia.get_root().html.add_child(folium.Element(stile_smartphone))
 
-map_italia.save("index.html")
+map_italia.save("mappa_interattiva.html")
 # --- FIX FIREFOX: sposta la tabella fuori dall'iframe ---
 with open("mappa_interattiva.html", "r", encoding="utf-8") as f:
     html = f.read()
