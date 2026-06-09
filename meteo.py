@@ -328,7 +328,7 @@ blocchi_html_tabelle = ""
 for r_nome in REGIONI_COORDINATE.keys():
     id_div_regione = r_nome.replace(" ", "-").replace("'", "-")
     blocchi_html_tabelle += f"""
-    <div id="box-regione-{id_div_regione}" class="gruppo-regione-tabella" style="display:none;">
+    <div id="box-regione-{id_div_regione}" class="gruppo-regione-tabella report-dettagliato" style="display: ...">
         {tabella_regionale_pioggia(r_nome)}
         {tabella_regionale_temperatura(r_nome)}
         {tabella_regionale_vento(r_nome)}
