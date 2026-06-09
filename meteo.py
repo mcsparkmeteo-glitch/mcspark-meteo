@@ -275,7 +275,7 @@ html, body, iframe {
 .banner-validita {
   position: absolute;
   top: 217px;
-  left: 460px;
+  left: 520px;
   transform: scale(1);
 }
 
