@@ -287,6 +287,22 @@ html, body, iframe {
     transform: scale(0.9);
   }
 }
+
+  /* 🔧 Fix per Firefox mobile */
+  .report-dettagliato {
+    position: relative !important;
+    margin-top: -40px !important; /* sposta la tabella sopra */
+    display: block !important;
+  }
+}
+
+/* 🔧 Compatibilità extra per Firefox */
+@supports (-moz-appearance: none) {
+  .report-dettagliato {
+    position: relative !important;
+    margin-top: -40px !important;
+  }
+}
 </style>
 """))
 
