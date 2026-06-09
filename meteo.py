@@ -292,7 +292,7 @@ html, body, iframe {
   .report-dettagliato {
     position: relative !important;
     margin-top: -40px !important; /* sposta la tabella sopra */
-    display: block !important;
+    z-index: 9999 !important;
   }
 }
 
