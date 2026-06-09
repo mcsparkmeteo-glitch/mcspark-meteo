@@ -282,7 +282,7 @@ html, body, iframe {
 /* ✅ Regole per smartphone */
 @media (max-width: 768px) {
   .banner-validita {
-    top: 217px !important;
+    top: 227px !important;
     left: 460px !important;
     transform: scale(0.9);
   }
