@@ -472,6 +472,46 @@ stile_smartphone = """
      } 
      .opzione-radio { display: block; margin-bottom: 8px; cursor: pointer; font-size: 12px; font-weight: bold; color: #333; } 
  } 
+ @media (max-width: 600px) {
+    #sidebar-tabelle-mcspark {
+        width: 100% !important;
+        height: 230px !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        border-radius: 12px 12px 0 0 !important;
+        border-width: 2px 0 0 0 !important;
+        z-index: 99999 !important;
+    }
+
+    #pannello-meteo-pulsanti {
+        top: 10px !important;
+        right: 10px !important;
+        width: 160px !important;
+        padding: 5px !important;
+        z-index: 99999 !important;
+    }
+
+    .opzione-radio {
+        display: block;
+        margin-bottom: 8px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+        color: #333;
+    }
+}
+
+/* ✅ Fix specifico per Firefox mobile */
+@supports (-moz-appearance: none) {
+    #sidebar-tabelle-mcspark {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 99999 !important;
+    }
+}
+
  </style> 
  """ 
 
