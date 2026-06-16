@@ -895,33 +895,52 @@ def genera_index_html():
             <title>Meteo McSpark</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
+                /* Impedisce lo scroll della pagina principale ed evita doppie barre */
                 html, body { 
                     font-family: Arial, sans-serif; 
                     text-align: center; 
                     margin: 0; 
                     padding: 0; 
                     background-color: #f8f9fa; 
+                    height: 100%; 
+                    overflow: hidden; 
                 }
+                
+                /* Contenitore verticale elastico per Google Sites */
+                .main-container {
+                    display: flex;
+                    flex-direction: column;
+                    height: 100vh;
+                    width: 100%;
+                }
+                
+                /* FASCIA IN ALTO BLU NOTTE (VARIANTE A) */
                 .header-bar {
                     background-color: #2c3e50;
                     background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
                     background-size: 4px 4px;
-                    padding: 15px 0 20px 0;
+                    padding: 10px 0 12px 0; /* Ottimizzato leggermente per recuperare spazio verticale */
                     box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+                    flex-shrink: 0; /* Impedisce alla barra di schiacciarsi */
                 }
+                
+                /* TITOLO BIANCO ED ELEGANTE */
                 h2 { 
-                    margin: 0 0 15px 0; 
+                    margin: 0 0 8px 0; 
                     color: #ffffff; 
-                    font-size: 26px; 
+                    font-size: 22px; /* Adattato per stare comodo anche dentro i blocchi di Google Sites */
                     letter-spacing: 0.5px;
                 }
+                
                 .btn-bar { margin-bottom: 0px; }
+                
+                /* STILE DEI BOTTONI NON ATTIVI */
                 button, .btn-bar a {
                     display: inline-block;
                     text-decoration: none;
-                    margin: 0 6px;
-                    padding: 10px 22px;
-                    font-size: 14px;
+                    margin: 0 5px;
+                    padding: 8px 18px; /* Leggermente più compatti per la visualizzazione embedded */
+                    font-size: 13px;
                     font-weight: 600;
                     cursor: pointer;
                     border-radius: 6px;
@@ -931,34 +950,47 @@ def genera_index_html():
                     transition: all 0.2s ease;
                     text-align: center;
                 }
+                
+                /* EFFETTO MOUSE SUI BOTTONI */
                 button:hover, .btn-bar a:hover {
                     background-color: #415b76;
                     color: #ffffff;
                     border-color: #cbd5e1;
                 }
+                
+                /* STILE DEL BOTTONE ATTIVO */
                 button.active, .btn-bar a.active {
                     background-color: #ffffff !important;
                     color: #2c3e50 !important;
                     border-color: #ffffff !important;
                     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
                 }
-                iframe { width: 100%; height: 86vh; border: none; display: block; }
+                
+                /* L'iframe ora prende automaticamente TUTTO lo spazio rimanente al millimetro */
+                iframe { 
+                    flex-grow: 1; 
+                    width: 100%; 
+                    border: none; 
+                    display: block; 
+                }
             </style>
         </head>
         <body>
-            <div class="header-bar">
-                <h2>Previsioni Meteo McSpark</h2>
-                <div class="btn-bar">
-                    <button onclick="carica('day1.html', this)" class="active">Oggi</button>
-                    <button onclick="carica('day2.html', this)">Domani</button>
-                    <button onclick="carica('day3.html', this)">Dopodomani</button>
+            <div class="main-container">
+                <div class="header-bar">
+                    <h2>Previsioni Meteo McSpark</h2>
+                    <div class="btn-bar">
+                        <button onclick="carica('day1.html', this)" class="active">Oggi</button>
+                        <button onclick="carica('day2.html', this)">Domani</button>
+                        <button onclick="carica('day3.html', this)">Dopodomani</button>
+                    </div>
                 </div>
+                
+                <iframe id="frame" src="day1.html"></iframe>
             </div>
-            
-            <iframe id="frame" src="day1.html"></iframe>
 
         <script>
-        // 1. Cambia il giorno nell'iframe in modo immediato
+        // 1. Funzione classica per cambiare giorno nell'iframe
         function carica(file, elemento) {
             document.getElementById('frame').src = file;
             var bottoni = document.querySelectorAll('.btn-bar button');
@@ -966,16 +998,15 @@ def genera_index_html():
             elemento.classList.add('active');
         }
 
-        // 2. Ripristino dello stato dopo il caricamento della nuova pagina
+        // 2. RIPRISTINO STATO AD OGNI CARICAMENTO DEL GIORNO
         document.getElementById('frame').addEventListener('load', function() {
             var iframeWindow = this.contentWindow;
             var iframeDocument = this.contentDocument || iframeWindow.document;
             
-            // Aspettiamo 500ms stabili: il tempo standard affinche la mappa carichi i layer e si assesti
+            // Aspettiamo che la mappa carichi le sue funzioni interne
             setTimeout(function() {
-                if (!iframeWindow) return;
-
-                // --- A. RIPRISTINO FILTRO METEO (Pioggia, Temperature, ecc.) ---
+                
+                // --- A. RIPRISTINO FILTRO METEO GLOBAL ---
                 var filtroSalvato = localStorage.getItem("visualizzazioneMeteoScelta");
                 var filtriMeteo = iframeDocument.querySelectorAll('#pannello-meteo-pulsanti input[type="radio"]');
                 
@@ -983,7 +1014,7 @@ def genera_index_html():
                     filtriMeteo.forEach(function(radio) {
                         if (radio.value === filtroSalvato) {
                             radio.checked = true;
-                            // Applica il filtro sulla mappa usando la funzione nativa
+                            // Aggiorna la mappa usando la funzione nativa che hai scritto nell'interfaccia custom
                             if (typeof iframeWindow.aggiornaMappaEInvolucri === 'function') {
                                 iframeWindow.aggiornaMappaEInvolucri(filtroSalvato);
                             }
@@ -991,20 +1022,22 @@ def genera_index_html():
                     });
                 }
                 
-                // --- B. RIPRISTINO REGIONE SELEZIONATA ---
+                // --- B. RIPRISTINO TABELLA REGIONE ---
                 var regioneSalvata = localStorage.getItem("regioneAttivaMcSpark");
                 if (regioneSalvata && typeof iframeWindow.mostraRegioneLaterale === 'function') {
+                    // Chiamiamo la tua funzione nativa! Apre la sidebar, nasconde il benvenuto e mostra la tabella
                     iframeWindow.mostraRegioneLaterale(regioneSalvata);
                 }
                 
-                // Attiva il monitoraggio per i click successivi
+                // Avviamo l'ascolto per i prossimi click
                 avviaMonitoraggio(iframeWindow, iframeDocument);
                 
-            }, 500); 
+            }, 1000); 
         });
 
-        // 3. Salva le azioni dell'utente in tempo reale nel localStorage
+        // 3. SALVATAGGIO IN MEMORIA IN TEMPO REALE
         function avviaMonitoraggio(iframeWindow, iframeDocument) {
+            // Ascolta i cambi manuali dei radio button
             var filtriMeteo = iframeDocument.querySelectorAll('#pannello-meteo-pulsanti input[type="radio"]');
             filtriMeteo.forEach(function(radio) {
                 radio.addEventListener('change', function() {
@@ -1014,15 +1047,12 @@ def genera_index_html():
                 });
             });
 
-            // Controlla la regione aperta per salvarla quando l'utente cambia manualmente sulla mappa
-            var controlloRegione = setInterval(function() {
-                if (iframeWindow && iframeWindow.ultimaRegioneAperta) {
+            // Controlla la variabile globale della mappa 'ultimaRegioneAperta' ogni 400ms e la salva
+            setInterval(function() {
+                if (iframeWindow.ultimaRegioneAperta) {
                     localStorage.setItem("regioneAttivaMcSpark", iframeWindow.ultimaRegioneAperta);
                 }
-            }, 500);
-            
-            // Pulizia del timer se l'iframe viene scaricato o cambiato
-            window.addEventListener('unload', function() { clearInterval(controlloRegione); });
+            }, 400);
         }
         </script>
         </body>
