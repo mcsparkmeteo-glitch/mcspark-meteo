@@ -958,7 +958,7 @@ def genera_index_html():
             <iframe id="frame" src="day1.html"></iframe>
 
         <script>
-        // 1. Funzione per cambiare giorno nell'iframe
+        // 1. Cambia il giorno nell'iframe in modo immediato
         function carica(file, elemento) {
             document.getElementById('frame').src = file;
             var bottoni = document.querySelectorAll('.btn-bar button');
@@ -966,53 +966,44 @@ def genera_index_html():
             elemento.classList.add('active');
         }
 
-        // 2. Ripristino stato ad ogni caricamento della mappa
+        // 2. Ripristino dello stato dopo il caricamento della nuova pagina
         document.getElementById('frame').addEventListener('load', function() {
             var iframeWindow = this.contentWindow;
             var iframeDocument = this.contentDocument || iframeWindow.document;
             
-            // Controllo sicuro e continuo finche la mappa non espone le sue funzioni
-            var tentativi = 0;
-            var controlloProntezza = setInterval(function() {
-                tentativi++;
+            // Aspettiamo 500ms stabili: il tempo standard affinche la mappa carichi i layer e si assesti
+            setTimeout(function() {
+                if (!iframeWindow) return;
+
+                // --- A. RIPRISTINO FILTRO METEO (Pioggia, Temperature, ecc.) ---
+                var filtroSalvato = localStorage.getItem("visualizzazioneMeteoScelta");
+                var filtriMeteo = iframeDocument.querySelectorAll('#pannello-meteo-pulsanti input[type="radio"]');
                 
-                // Se la mappa interna e le sue funzioni esistono finalmente in memoria
-                if (iframeWindow && iframeWindow.mostraRegioneLaterale) {
-                    clearInterval(controlloProntezza);
-                    
-                    // --- A. RIPRISTINO FILTRO METEO ---
-                    var filtroSalvato = localStorage.getItem("visualizzazioneMeteoScelta");
-                    var filtriMeteo = iframeDocument.querySelectorAll('#pannello-meteo-pulsanti input[type="radio"]');
-                    
-                    if (filtroSalvato && filtriMeteo.length > 0) {
-                        filtriMeteo.forEach(function(radio) {
-                            if (radio.value === filtroSalvato) {
-                                radio.checked = true;
-                                if (typeof iframeWindow.aggiornaMappaEInvolucri === 'function') {
-                                    iframeWindow.aggiornaMappaEInvolucri(filtroSalvato);
-                                }
+                if (filtroSalvato && filtriMeteo.length > 0) {
+                    filtriMeteo.forEach(function(radio) {
+                        if (radio.value === filtroSalvato) {
+                            radio.checked = true;
+                            // Applica il filtro sulla mappa usando la funzione nativa
+                            if (typeof iframeWindow.aggiornaMappaEInvolucri === 'function') {
+                                iframeWindow.aggiornaMappaEInvolucri(filtroSalvato);
                             }
-                        });
-                    }
-                    
-                    // --- B. RIPRISTINO REGIONE SELEZIONATA ---
-                    var regioneSalvata = localStorage.getItem("regioneAttivaMcSpark");
-                    if (regioneSalvata) {
-                        iframeWindow.mostraRegioneLaterale(regioneSalvata);
-                    }
-                    
-                    // Attiva i listener per salvare i futuri click dell'utente
-                    avviaMonitoraggio(iframeWindow, iframeDocument);
+                        }
+                    });
                 }
                 
-                // Limite di sicurezza (3 secondi) per evitare loop infiniti se la mappa ha un errore interno
-                if (tentativi > 60) {
-                    clearInterval(controlloProntezza);
+                // --- B. RIPRISTINO REGIONE SELEZIONATA ---
+                var regioneSalvata = localStorage.getItem("regioneAttivaMcSpark");
+                if (regioneSalvata && typeof iframeWindow.mostraRegioneLaterale === 'function') {
+                    iframeWindow.mostraRegioneLaterale(regioneSalvata);
                 }
-            }, 50);
+                
+                // Attiva il monitoraggio per i click successivi
+                avviaMonitoraggio(iframeWindow, iframeDocument);
+                
+            }, 500); 
         });
 
-        // 3. Salvataggio delle scelte dell'utente in tempo reale
+        // 3. Salva le azioni dell'utente in tempo reale nel localStorage
         function avviaMonitoraggio(iframeWindow, iframeDocument) {
             var filtriMeteo = iframeDocument.querySelectorAll('#pannello-meteo-pulsanti input[type="radio"]');
             filtriMeteo.forEach(function(radio) {
@@ -1023,12 +1014,15 @@ def genera_index_html():
                 });
             });
 
-            // Monitora la variabile della regione attiva per memorizzarla istantaneamente
-            setInterval(function() {
+            // Controlla la regione aperta per salvarla quando l'utente cambia manualmente sulla mappa
+            var controlloRegione = setInterval(function() {
                 if (iframeWindow && iframeWindow.ultimaRegioneAperta) {
                     localStorage.setItem("regioneAttivaMcSpark", iframeWindow.ultimaRegioneAperta);
                 }
-            }, 400);
+            }, 500);
+            
+            // Pulizia del timer se l'iframe viene scaricato o cambiato
+            window.addEventListener('unload', function() { clearInterval(controlloRegione); });
         }
         </script>
         </body>
