@@ -895,22 +895,40 @@ def genera_index_html():
             <title>Meteo McSpark</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-                body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; background-color: #f8f9fa; }
+                /* Impedisce lo scroll della pagina principale ed evita doppie barre */
+                html, body { 
+                    font-family: Arial, sans-serif; 
+                    text-align: center; 
+                    margin: 0; 
+                    padding: 0; 
+                    background-color: #f8f9fa; 
+                    height: 100%; 
+                    overflow: hidden; 
+                }
+                
+                /* Contenitore verticale elastico per Google Sites */
+                .main-container {
+                    display: flex;
+                    flex-direction: column;
+                    height: 100vh;
+                    width: 100%;
+                }
                 
                 /* FASCIA IN ALTO BLU NOTTE (VARIANTE A) */
                 .header-bar {
                     background-color: #2c3e50;
                     background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
                     background-size: 4px 4px;
-                    padding: 15px 0 20px 0;
+                    padding: 10px 0 12px 0; /* Ottimizzato leggermente per recuperare spazio verticale */
                     box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+                    flex-shrink: 0; /* Impedisce alla barra di schiacciarsi */
                 }
                 
                 /* TITOLO BIANCO ED ELEGANTE */
                 h2 { 
-                    margin: 0 0 15px 0; 
+                    margin: 0 0 8px 0; 
                     color: #ffffff; 
-                    font-size: 26px; 
+                    font-size: 22px; /* Adattato per stare comodo anche dentro i blocchi di Google Sites */
                     letter-spacing: 0.5px;
                 }
                 
@@ -920,9 +938,9 @@ def genera_index_html():
                 button, .btn-bar a {
                     display: inline-block;
                     text-decoration: none;
-                    margin: 0 6px;
-                    padding: 10px 22px;
-                    font-size: 14px;
+                    margin: 0 5px;
+                    padding: 8px 18px; /* Leggermente più compatti per la visualizzazione embedded */
+                    font-size: 13px;
                     font-weight: 600;
                     cursor: pointer;
                     border-radius: 6px;
@@ -948,20 +966,28 @@ def genera_index_html():
                     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
                 }
                 
-                iframe { width: 100%; height: 86vh; border: none; display: block; }
+                /* L'iframe ora prende automaticamente TUTTO lo spazio rimanente al millimetro */
+                iframe { 
+                    flex-grow: 1; 
+                    width: 100%; 
+                    border: none; 
+                    display: block; 
+                }
             </style>
         </head>
         <body>
-            <div class="header-bar">
-                <h2>Previsioni Meteo McSpark</h2>
-                <div class="btn-bar">
-                    <button onclick="carica('day1.html', this)" class="active">Oggi</button>
-                    <button onclick="carica('day2.html', this)">Domani</button>
-                    <button onclick="carica('day3.html', this)">Dopodomani</button>
+            <div class="main-container">
+                <div class="header-bar">
+                    <h2>Previsioni Meteo McSpark</h2>
+                    <div class="btn-bar">
+                        <button onclick="carica('day1.html', this)" class="active">Oggi</button>
+                        <button onclick="carica('day2.html', this)">Domani</button>
+                        <button onclick="carica('day3.html', this)">Dopodomani</button>
+                    </div>
                 </div>
+                
+                <iframe id="frame" src="day1.html"></iframe>
             </div>
-            
-            <iframe id="frame" src="day1.html"></iframe>
 
         <script>
         // 1. Funzione classica per cambiare giorno nell'iframe
