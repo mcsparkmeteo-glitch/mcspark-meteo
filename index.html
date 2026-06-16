@@ -107,28 +107,46 @@
             elemento.classList.add('active');
         }
 
-        // 2. RIPRISTINO STATO AD OGNI CARICAMENTO DEL GIORNO
+        // 2. RIPRISTINO STATO AD OGNI CARICAMENTO DEL GIORNO (CON CONTROLLO DINAMICO)
         document.getElementById('frame').addEventListener('load', function() {
             var iframeWindow = this.contentWindow;
             var iframeDocument = this.contentDocument || iframeWindow.document;
             
-            // Aspettiamo che la mappa carichi le sue funzioni interne
-            setTimeout(function() {
-                
-                // --- A. RIPRISTINO FILTRO METEO GLOBAL ---
-                var filtroSalvato = localStorage.getItem("visualizzazioneMeteoScelta");
-                var filtriMeteo = iframeDocument.querySelectorAll('#pannello-meteo-pulsanti input[type="radio"]');
-                
-                if (filtroSalvato && filtriMeteo.length > 0) {
-                    filtriMeteo.forEach(function(radio) {
-                        if (radio.value === filtroSalvato) {
-                            radio.checked = true;
-                            // Aggiorna la mappa usando la funzione nativa che hai scritto nell'interfaccia custom
-                            if (typeof iframeWindow.aggiornaMappaEInvolucri === 'function') {
+            // Creiamo un controllo continuo (ogni 50ms) per verificare quando le funzioni della mappa sono pronte
+            var controlloProntezza = setInterval(function() {
+                if (typeof iframeWindow.aggiornaMappaEInvolucri === 'function' && 
+                    typeof iframeWindow.mostraRegioneLaterale === 'function') {
+                    
+                    // LE FUNZIONI SONO PRONTE! Blocchiamo il controllo continuo
+                    clearInterval(controlloProntezza);
+                    
+                    // --- A. RIPRISTINO FILTRO METEO GLOBAL ---
+                    var filtroSalvato = localStorage.getItem("visualizzazioneMeteoScelta");
+                    var filtriMeteo = iframeDocument.querySelectorAll('#pannello-meteo-pulsanti input[type="radio"]');
+                    
+                    if (filtroSalvato && filtriMeteo.length > 0) {
+                        filtriMeteo.forEach(function(radio) {
+                            if (radio.value === filtroSalvato) {
+                                radio.checked = true;
                                 iframeWindow.aggiornaMappaEInvolucri(filtroSalvato);
                             }
-                        }
-                    });
+                        });
+                    }
+                    
+                    // --- B. RIPRISTINO TABELLA REGIONE (Niente più salti sulla Toscana!) ---
+                    var regioneSalvata = localStorage.getItem("regioneAttivaMcSpark");
+                    if (regioneSalvata) {
+                        iframeWindow.mostraRegioneLaterale(regioneSalvata);
+                    }
+                    
+                    // Avviamo l'ascolto per i prossimi click
+                    avviaMonitoraggio(iframeWindow, iframeDocument);
+                }
+            }, 50); // Controlla ogni 50 millisecondi, è istantaneo
+            
+            // Sicurezza: se dopo 3 secondi non ha caricato, interrompiamo per non intasare la memoria
+            setTimeout(function() { clearInterval(controlloProntezza); }, 3000);
+        });
                 }
                 
                 // --- B. RIPRISTINO TABELLA REGIONE ---
