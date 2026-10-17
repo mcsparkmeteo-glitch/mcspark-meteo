@@ -1,3 +1,4 @@
 requests
 folium
 jinja2
+shapely
