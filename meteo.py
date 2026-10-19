@@ -1656,6 +1656,35 @@ def genera_mappa_completa(day_index: int, nome_file: str):
 
     map_italia.get_root().html.add_child(folium.Element(script_memoria_filtri))
 
+    d0_str = ora_italiana.strftime("%d/%m/%Y")
+    d1_str = (ora_italiana + timedelta(days=1)).strftime("%d/%m/%Y")
+    d2_str = (ora_italiana + timedelta(days=2)).strftime("%d/%m/%Y")
+
+    header_date_html = f"""
+    <div style="position: fixed; top: 0; left: 0; right: 0; height: 45px; background-color: #2c3e50; 
+                z-index: 100000; display: flex; align-items: center; justify-content: center; gap: 8px; 
+                box-shadow: 0 2px 10px rgba(0,0,0,0.3); font-family: Arial, sans-serif;">
+        <a href="day1.html" target="_self" style="text-decoration:none;">
+            <button style="padding: 6px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; border: 1px solid #4a5d71; 
+                           background-color: {'#ffffff' if day_index == 0 else '#34495e'}; 
+                           color: {'#2c3e50' if day_index == 0 else '#cbd5e1'}; cursor: pointer;">{d0_str}</button>
+        </a>
+        <a href="day2.html" target="_self" style="text-decoration:none;">
+            <button style="padding: 6px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; border: 1px solid #4a5d71; 
+                           background-color: {'#ffffff' if day_index == 1 else '#34495e'}; 
+                           color: {'#2c3e50' if day_index == 1 else '#cbd5e1'}; cursor: pointer;">{d1_str}</button>
+        </a>
+        <a href="day3.html" target="_self" style="text-decoration:none;">
+            <button style="padding: 6px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; border: 1px solid #4a5d71; 
+                           background-color: {'#ffffff' if day_index == 2 else '#34495e'}; 
+                           color: {'#2c3e50' if day_index == 2 else '#cbd5e1'}; cursor: pointer;">{d2_str}</button>
+        </a>
+    </div>
+    """
+    map_italia.get_root().html.add_child(folium.Element(header_date_html))
+    # ==========================================
+
+
     map_italia.save(nome_file)
     print(f"✅ Mappa salvata con successo in: {nome_file}")
 
