@@ -1068,18 +1068,17 @@ def genera_mappa_completa(day_index: int, nome_file: str):
     for r_nome, coord in REGIONI_COORDINATE.items():
         id_pulito = r_nome.replace(" ", "-").replace("'", "-")
         html_indicatore_nativo = f"""
-        <div onclick="mostraRegioneLaterale('{id_pulito}');" 
-             ontouchend="mostraRegioneLaterale('{id_pulito}'); event.preventDefault();" 
-             title="{r_nome}"
+        <div class="regione-marker-item" data-regione="{id_pulito}" title="{r_nome}"
              style="width: 26px; height: 26px; background-color: white; border: 3px solid #2c3e50;
                     border-radius: 50%; cursor: pointer; box-shadow: 0px 2px 6px rgba(0,0,0,0.3);
                     transform: translate(-13px, -13px); z-index: 99999; pointer-events: auto !important;"></div>
         """
-        marker = folium.Marker(
+        folium.Marker(
             location=coord,
-            icon=folium.DivIcon(html=html_indicatore_nativo, icon_size=(26, 26)),
-        )
-        marker.add_to(map_italia)
+            icon=folium.DivIcon(
+                html=html_indicatore_nativo, icon_size=(26, 26)
+            ),
+        ).add_to(map_italia)
 
     interfaccia_custom_html = (
         """
@@ -1583,24 +1582,50 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             chiudiTuttiSheets();
         }
 
-        // Sblocco dei tocchi per i menu e pannelli su Leaflet / Mobile
-        setTimeout(function() {
-            var elementiDaSbloccare = [
-                'sidebar-tabelle-mcspark', 
-                'pannello-meteo-pulsanti', 
-                'legenda-mappa-mcspark', 
-                'mobile-nav-bar'
-            ];
-            
-            elementiDaSbloccare.forEach(function(id) {
-                var el = document.getElementById(id);
-                if (el && typeof L !== 'undefined' && L.DomEvent) {
-                    L.DomEvent.disableClickPropagation(el);
-                    L.DomEvent.disableScrollPropagation(el);
-                }
-            });
-        }, 500);
+        // =========================================================
+        // SBLOCCO DEFINITIVO EVENTI LEAFLET PER MOBILE E DESKTOP
+        // =========================================================
+        function sbloccaElementoInterattivo(el) {
+            if (!el) return;
+            if (typeof L !== 'undefined' && L.DomEvent) {
+                L.DomEvent.disableClickPropagation(el);
+                L.DomEvent.disableScrollPropagation(el);
+                L.DomEvent.on(el, 'click', function(e) { e.stopPropagation(); });
+                L.DomEvent.on(el, 'touchstart', function(e) { e.stopPropagation(); });
+                L.DomEvent.on(el, 'touchend', function(e) { e.stopPropagation(); });
+            }
+        }
 
+        // Sblocca i pannelli fissi e la barra di navigazione
+        var idsUI = [
+            'sidebar-tabelle-mcspark', 
+            'pannello-meteo-pulsanti', 
+            'legenda-mappa-mcspark', 
+            'mobile-nav-bar'
+        ];
+        idsUI.forEach(function(id) {
+            sbloccaElementoInterattivo(document.getElementById(id));
+        });
+
+        // Sblocca dinamicamente i cerchi delle regioni sulla mappa
+        setTimeout(function() {
+            var markers = document.querySelectorAll('.regione-marker-item');
+            markers.forEach(function(m) {
+                sbloccaElementoInterattivo(m);
+                
+                var attivaRegione = function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    var reg = m.getAttribute('data-regione');
+                    if (reg && typeof mostraRegioneLaterale === 'function') {
+                        mostraRegioneLaterale(reg);
+                    }
+                };
+
+                m.addEventListener('click', attivaRegione);
+                m.addEventListener('touchend', attivaRegione, { passive: false });
+            });
+        }, 400);
     });
     </script>
     """
