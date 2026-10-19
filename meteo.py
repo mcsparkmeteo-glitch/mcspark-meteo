@@ -1683,7 +1683,34 @@ def genera_mappa_completa(day_index: int, nome_file: str):
     """
     map_italia.get_root().html.add_child(folium.Element(header_date_html))
     # ==========================================
+    map_italia.get_root().html.add_child(folium.Element("""
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(function() {
+            var markers = document.querySelectorAll('.regione-marker-item');
+            markers.forEach(function(m) {
+                // Dice a Leaflet di non intercettare/bloccare i tocchi su questo cerchio
+                if (typeof L !== 'undefined' && L.DomEvent) {
+                    L.DomEvent.disableClickPropagation(m);
+                    L.DomEvent.disableScrollPropagation(m);
+                }
 
+                var attivaRegione = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var reg = m.getAttribute('data-regione');
+                    if (reg && typeof mostraRegioneLaterale === 'function') {
+                        mostraRegioneLaterale(reg);
+                    }
+                };
+
+                // Ascolta sia il tocco mobile che il click del mouse
+                m.addEventListener('pointerdown', attivaRegione, { passive: false });
+            });
+        }, 500);
+    });
+    </script>
+    """))
 
     map_italia.save(nome_file)
     print(f"✅ Mappa salvata con successo in: {nome_file}")
