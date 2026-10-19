@@ -1187,18 +1187,18 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         @media (max-width: 768px) {
             body, html {
                 height: 100% !important;
-                touch-action: auto !important;
+                touch-action: manipulation !important;
             }
 
             .mobile-nav-bar {
                 display: flex !important;
                 position: fixed !important;
-                bottom: 14px !important; /* Sollevata dal bordo per evitare la barra di sistema dello smartphone */
+                bottom: 14px !important;
                 left: 12px !important;
                 right: 12px !important;
                 height: 55px !important;
                 background: #2c3e50 !important;
-                border-radius: 14px !important; /* Diventa una pillola fluttuante cliccabile al 100% */
+                border-radius: 14px !important;
                 z-index: 100000 !important;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
                 pointer-events: auto !important;
@@ -1291,8 +1291,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                 font-size: 13px;
                 border-bottom: 1px solid #f1f5f9;
             }
-        }
-
+            
             .wrapper-footer-mobile {
                 bottom: 70px !important;
             }
@@ -1366,7 +1365,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         <div class="legenda-riga"><span style="font-size:12px;">❄️</span> <b>Neve Prevista</b></div>
     </div>
 
-    <!-- BARRA NAVIGAZIONE MOBILE IN BASSO (SENZA CLASSI ACTIVE INIZIALI) -->
+    <!-- BARRA NAVIGAZIONE MOBILE IN BASSO -->
     <div class="mobile-nav-bar">
         <button class="mobile-nav-btn" onclick="apriSheetMobile('pannello-meteo-pulsanti')">
             <span>🎨</span>Filtri
@@ -1583,52 +1582,22 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         if (window.innerWidth <= 768) {
             chiudiTuttiSheets();
         }
+    });
 
-        // =========================================================
-        // SBLOCCO DEFINITIVO EVENTI LEAFLET PER MOBILE E DESKTOP
-        // =========================================================
-        function sbloccaElementoInterattivo(el) {
-            if (!el) return;
-            if (typeof L !== 'undefined' && L.DomEvent) {
-                L.DomEvent.disableClickPropagation(el);
-                L.DomEvent.disableScrollPropagation(el);
-                L.DomEvent.on(el, 'click', function(e) { e.stopPropagation(); });
-                L.DomEvent.on(el, 'touchstart', function(e) { e.stopPropagation(); });
-                L.DomEvent.on(el, 'touchend', function(e) { e.stopPropagation(); });
+    // =========================================================
+    // SBLOCCO UNIFICATO POINTERDOWN (Funziona su Chrome e Firefox Mobile)
+    // =========================================================
+    document.addEventListener('pointerdown', function(e) {
+        var target = e.target.closest('.regione-marker-item');
+        if (target) {
+            e.preventDefault();
+            e.stopPropagation();
+            var reg = target.getAttribute('data-regione');
+            if (reg && typeof mostraRegioneLaterale === 'function') {
+                mostraRegioneLaterale(reg);
             }
         }
-
-        // Sblocca i pannelli fissi e la barra di navigazione
-        var idsUI = [
-            'sidebar-tabelle-mcspark', 
-            'pannello-meteo-pulsanti', 
-            'legenda-mappa-mcspark', 
-            'mobile-nav-bar'
-        ];
-        idsUI.forEach(function(id) {
-            sbloccaElementoInterattivo(document.getElementById(id));
-        });
-
-        // Sblocca dinamicamente i cerchi delle regioni sulla mappa
-        setTimeout(function() {
-            var markers = document.querySelectorAll('.regione-marker-item');
-            markers.forEach(function(m) {
-                sbloccaElementoInterattivo(m);
-                
-                var attivaRegione = function(e) {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    var reg = m.getAttribute('data-regione');
-                    if (reg && typeof mostraRegioneLaterale === 'function') {
-                        mostraRegioneLaterale(reg);
-                    }
-                };
-
-                m.addEventListener('click', attivaRegione);
-                m.addEventListener('touchend', attivaRegione, { passive: false });
-            });
-        }, 400);
-    });
+    }, { passive: false });
     </script>
     """
     )
@@ -1658,57 +1627,30 @@ def genera_mappa_completa(day_index: int, nome_file: str):
     script_memoria_filtri = """
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-    const filtriMeteo = document.querySelectorAll('input[type="radio"]');
-    const filtroSalvato = localStorage.getItem("visualizzazioneMeteoScelta");
-    
-    if (filtroSalvato) {
+        const filtriMeteo = document.querySelectorAll('input[type="radio"]');
+        const filtroSalvato = localStorage.getItem("visualizzazioneMeteoScelta");
+        
+        if (filtroSalvato) {
+            filtriMeteo.forEach(radio => {
+                if (radio.value === filtroSalvato || radio.id === filtroSalvato) {
+                    radio.checked = true;
+                    aggiornaMappaEInvolucri(radio.value);
+                }
+            });
+        }
+
         filtriMeteo.forEach(radio => {
-            if (radio.value === filtroSalvato || radio.id === filtroSalvato) {
-                radio.checked = true;
-                // Aggiorna la visualizzazione senza far scattare eventi di apertura drawer
-                aggiornaMappaEInvolucri(radio.value);
-            }
+            radio.addEventListener("change", function() {
+                if (this.checked) {
+                    localStorage.setItem("visualizzazioneMeteoScelta", this.value || this.id);
+                }
+            });
         });
-    }
 
-    filtriMeteo.forEach(radio => {
-        radio.addEventListener("change", function() {
-            if (this.checked) {
-                localStorage.setItem("visualizzazioneMeteoScelta", this.value || this.id);
-            }
-        });
-    });
-
-    // Garantisce che all'avvio su mobile tutti i pannelli rimangano chiusi
-    if (window.innerWidth <= 768) {
-        setTimeout(chiudiTuttiSheets, 200);
-    }
-
-    // Gestori globali per i cerchi bianchi (Bypassano i blocchi di Leaflet)
-    document.addEventListener('touchstart', function(e) {
-        var target = e.target.closest('.regione-marker-item');
-        if (target) {
-            e.preventDefault();
-            e.stopPropagation();
-            var reg = target.getAttribute('data-regione');
-            if (reg && typeof mostraRegioneLaterale === 'function') {
-                mostraRegioneLaterale(reg);
-            }
-        }
-    }, { passive: false });
-
-    document.addEventListener('click', function(e) {
-        var target = e.target.closest('.regione-marker-item');
-        if (target) {
-            e.preventDefault();
-            e.stopPropagation();
-            var reg = target.getAttribute('data-regione');
-            if (reg && typeof mostraRegioneLaterale === 'function') {
-                mostraRegioneLaterale(reg);
-            }
+        if (window.innerWidth <= 768) {
+            setTimeout(chiudiTuttiSheets, 200);
         }
     });
-});
     </script>
     """
 
