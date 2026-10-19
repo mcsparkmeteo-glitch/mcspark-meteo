@@ -1193,15 +1193,16 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             .mobile-nav-bar {
                 display: flex !important;
                 position: fixed !important;
-                bottom: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
-                height: 60px !important;
+                bottom: 14px !important; /* Sollevata dal bordo per evitare la barra di sistema dello smartphone */
+                left: 12px !important;
+                right: 12px !important;
+                height: 55px !important;
                 background: #2c3e50 !important;
+                border-radius: 14px !important; /* Diventa una pillola fluttuante cliccabile al 100% */
                 z-index: 100000 !important;
-                box-shadow: 0 -2px 10px rgba(0,0,0,0.3) !important;
-                padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
                 pointer-events: auto !important;
+                border: 1px solid rgba(255,255,255,0.2);
             }
             .mobile-nav-btn {
                 flex: 1 !important;
@@ -1221,7 +1222,8 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             }
             .mobile-nav-btn.active {
                 color: #ffffff !important;
-                background-color: rgba(255,255,255,0.1) !important;
+                background-color: rgba(255,255,255,0.15) !important;
+                border-radius: 10px;
             }
             .mobile-nav-btn span { font-size: 18px !important; margin-bottom: 2px !important; }
 
@@ -1656,32 +1658,57 @@ def genera_mappa_completa(day_index: int, nome_file: str):
     script_memoria_filtri = """
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const filtriMeteo = document.querySelectorAll('input[type="radio"]');
-        const filtroSalvato = localStorage.getItem("visualizzazioneMeteoScelta");
-        
-        if (filtroSalvato) {
-            filtriMeteo.forEach(radio => {
-                if (radio.value === filtroSalvato || radio.id === filtroSalvato) {
-                    radio.checked = true;
-                    // Aggiorna la visualizzazione senza far scattare eventi di apertura drawer
-                    aggiornaMappaEInvolucri(radio.value);
-                }
-            });
-        }
-
+    const filtriMeteo = document.querySelectorAll('input[type="radio"]');
+    const filtroSalvato = localStorage.getItem("visualizzazioneMeteoScelta");
+    
+    if (filtroSalvato) {
         filtriMeteo.forEach(radio => {
-            radio.addEventListener("change", function() {
-                if (this.checked) {
-                    localStorage.setItem("visualizzazioneMeteoScelta", this.value || this.id);
-                }
-            });
+            if (radio.value === filtroSalvato || radio.id === filtroSalvato) {
+                radio.checked = true;
+                // Aggiorna la visualizzazione senza far scattare eventi di apertura drawer
+                aggiornaMappaEInvolucri(radio.value);
+            }
         });
+    }
 
-        // Garantisce che all'avvio su mobile tutti i pannelli rimangano chiusi
-        if (window.innerWidth <= 768) {
-            setTimeout(chiudiTuttiSheets, 200);
+    filtriMeteo.forEach(radio => {
+        radio.addEventListener("change", function() {
+            if (this.checked) {
+                localStorage.setItem("visualizzazioneMeteoScelta", this.value || this.id);
+            }
+        });
+    });
+
+    // Garantisce che all'avvio su mobile tutti i pannelli rimangano chiusi
+    if (window.innerWidth <= 768) {
+        setTimeout(chiudiTuttiSheets, 200);
+    }
+
+    // Gestori globali per i cerchi bianchi (Bypassano i blocchi di Leaflet)
+    document.addEventListener('touchstart', function(e) {
+        var target = e.target.closest('.regione-marker-item');
+        if (target) {
+            e.preventDefault();
+            e.stopPropagation();
+            var reg = target.getAttribute('data-regione');
+            if (reg && typeof mostraRegioneLaterale === 'function') {
+                mostraRegioneLaterale(reg);
+            }
+        }
+    }, { passive: false });
+
+    document.addEventListener('click', function(e) {
+        var target = e.target.closest('.regione-marker-item');
+        if (target) {
+            e.preventDefault();
+            e.stopPropagation();
+            var reg = target.getAttribute('data-regione');
+            if (reg && typeof mostraRegioneLaterale === 'function') {
+                mostraRegioneLaterale(reg);
+            }
         }
     });
+});
     </script>
     """
 
