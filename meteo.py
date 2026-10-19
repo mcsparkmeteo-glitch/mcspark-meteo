@@ -1183,26 +1183,14 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         .btn-chiudi-sheet { display: none; }
 
         /* ========================================================= */
-        /* STILI MOBILE-FIRST (SMARTPHONE iOS/ANDROID)               */
+        /* STILI MOBILE-FIRST (SMARTPHONE iOS/ANDROID) CORRETTI      */
         /* ========================================================= */
         @media (max-width: 768px) {
             body, html {
-                height: 100dvh !important;
-                overflow: hidden !important;
+                height: 100% !important;
+                touch-action: auto !important;
             }
 
-            .mobile-nav-bar {
-                display: flex !important;
-                position: fixed !important;
-                bottom: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
-                height: 60px !important;
-                background: #2c3e50 !important;
-                z-index: 100000 !important;
-                box-shadow: 0 -2px 10px rgba(0,0,0,0.3) !important;
-                padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-            }
             .mobile-nav-bar {
                 display: flex !important;
                 position: fixed !important;
@@ -1238,7 +1226,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             }
             .mobile-nav-btn span { font-size: 18px !important; margin-bottom: 2px !important; }
 
-            /* RESET RIGIDO: NASCOSTI E BLOCCATI FUORI SCHERMO ALL'AVVIO */
+            /* PANNELLI A SCOMPARSA OTTIMIZZATI PER TOUCH */
             #sidebar-tabelle-mcspark, #pannello-meteo-pulsanti, #legenda-mappa-mcspark {
                 position: fixed !important;
                 top: auto !important;
@@ -1249,11 +1237,11 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                 width: 100% !important;
                 max-width: 100% !important;
                 height: auto !important;
-                max-height: 40dvh !important;
+                max-height: 45dvh !important;
                 border-radius: 18px 18px 0 0 !important;
                 border: none !important;
                 border-top: 3px solid #2c3e50 !important;
-                transition: bottom 0.35s cubic-bezier(0.1, 0.9, 0.2, 1) !important;
+                transition: bottom 0.3s ease !important;
                 z-index: 99999 !important;
                 box-shadow: 0 -5px 25px rgba(0,0,0,0.3) !important;
                 background: #ffffff !important;
@@ -1261,9 +1249,10 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                 padding-bottom: calc(65px + env(safe-area-inset-bottom, 0px)) !important;
                 box-sizing: border-box !important;
                 overflow-y: auto !important;
+                pointer-events: auto !important;
+                touch-action: pan-y !important;
             }
 
-            /* APERTURA TRAMITE CLASSE DI STATO */
             .sheet-aperto {
                 display: block !important;
                 bottom: 0 !important;
@@ -1285,6 +1274,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                 line-height: 30px !important;
                 text-align: center !important;
                 cursor: pointer !important;
+                pointer-events: auto !important;
             }
 
             .drag-handle {
@@ -1300,6 +1290,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                 font-size: 13px;
                 border-bottom: 1px solid #f1f5f9;
             }
+        }
 
             .wrapper-footer-mobile {
                 bottom: 70px !important;
