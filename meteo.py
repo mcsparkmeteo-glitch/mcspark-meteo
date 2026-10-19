@@ -1068,19 +1068,18 @@ def genera_mappa_completa(day_index: int, nome_file: str):
     for r_nome, coord in REGIONI_COORDINATE.items():
         id_pulito = r_nome.replace(" ", "-").replace("'", "-")
         html_indicatore_nativo = f"""
-        <div onclick="mostraRegioneLaterale('{id_pulito}'); event.stopPropagation();" 
-             ontouchend="mostraRegioneLaterale('{id_pulito}'); event.stopPropagation();" 
+        <div onclick="mostraRegioneLaterale('{id_pulito}');" 
+             ontouchend="mostraRegioneLaterale('{id_pulito}'); event.preventDefault();" 
              title="{r_nome}"
              style="width: 26px; height: 26px; background-color: white; border: 3px solid #2c3e50;
                     border-radius: 50%; cursor: pointer; box-shadow: 0px 2px 6px rgba(0,0,0,0.3);
                     transform: translate(-13px, -13px); z-index: 99999; pointer-events: auto !important;"></div>
         """
-        folium.Marker(
+        marker = folium.Marker(
             location=coord,
-            icon=folium.DivIcon(
-                html=html_indicatore_nativo, icon_size=(26, 26)
-            ),
-        ).add_to(map_italia)
+            icon=folium.DivIcon(html=html_indicatore_nativo, icon_size=(26, 26)),
+        )
+        marker.add_to(map_italia)
 
     interfaccia_custom_html = (
         """
@@ -1592,6 +1591,25 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         if (window.innerWidth <= 768) {
             chiudiTuttiSheets();
         }
+
+        // Sblocco dei tocchi per i menu e pannelli su Leaflet / Mobile
+        setTimeout(function() {
+            var elementiDaSbloccare = [
+                'sidebar-tabelle-mcspark', 
+                'pannello-meteo-pulsanti', 
+                'legenda-mappa-mcspark', 
+                'mobile-nav-bar'
+            ];
+            
+            elementiDaSbloccare.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el && typeof L !== 'undefined' && L.DomEvent) {
+                    L.DomEvent.disableClickPropagation(el);
+                    L.DomEvent.disableScrollPropagation(el);
+                }
+            });
+        }, 500);
+
     });
     </script>
     """
