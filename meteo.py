@@ -1068,10 +1068,12 @@ def genera_mappa_completa(day_index: int, nome_file: str):
     for r_nome, coord in REGIONI_COORDINATE.items():
         id_pulito = r_nome.replace(" ", "-").replace("'", "-")
         html_indicatore_nativo = f"""
-        <div onclick="mostraRegioneLaterale('{id_pulito}')" title="{r_nome}"
+        <div onclick="mostraRegioneLaterale('{id_pulito}'); event.stopPropagation();" 
+             ontouchend="mostraRegioneLaterale('{id_pulito}'); event.stopPropagation();" 
+             title="{r_nome}"
              style="width: 26px; height: 26px; background-color: white; border: 3px solid #2c3e50;
                     border-radius: 50%; cursor: pointer; box-shadow: 0px 2px 6px rgba(0,0,0,0.3);
-                    transform: translate(-13px, -13px); z-index: 99999;"></div>
+                    transform: translate(-13px, -13px); z-index: 99999; pointer-events: auto !important;"></div>
         """
         folium.Marker(
             location=coord,
@@ -1202,6 +1204,19 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                 box-shadow: 0 -2px 10px rgba(0,0,0,0.3) !important;
                 padding-bottom: env(safe-area-inset-bottom, 0px) !important;
             }
+            .mobile-nav-bar {
+                display: flex !important;
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                height: 60px !important;
+                background: #2c3e50 !important;
+                z-index: 100000 !important;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.3) !important;
+                padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+                pointer-events: auto !important;
+            }
             .mobile-nav-btn {
                 flex: 1 !important;
                 display: flex !important;
@@ -1215,6 +1230,8 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                 border: none !important;
                 padding: 4px 0 !important;
                 cursor: pointer !important;
+                pointer-events: auto !important;
+                touch-action: manipulation !important;
             }
             .mobile-nav-btn.active {
                 color: #ffffff !important;
