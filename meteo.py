@@ -1083,6 +1083,13 @@ def genera_mappa_completa(day_index: int, nome_file: str):
     interfaccia_custom_html = (
         """
     <style>
+        .leaflet-container {
+            touch-action: manipulation !important;
+        }
+        .regione-marker-item {
+            touch-action: manipulation !important;
+            cursor: pointer !important;
+        }
         .v-filtro { opacity: 0 !important; pointer-events: none !important; transition: opacity 0.2s ease; }
         .v-attivo { opacity: 0.7 !important; pointer-events: auto !important; }
         .sfumatura-a1dab4 { fill: url(#grad-a1dab4) !important; } .sfumatura-41b6c4 { fill: url(#grad-41b6c4) !important; }
@@ -1583,21 +1590,6 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             chiudiTuttiSheets();
         }
     });
-
-    // =========================================================
-    // SBLOCCO UNIFICATO POINTERDOWN (Funziona su Chrome e Firefox Mobile)
-    // =========================================================
-    document.addEventListener('pointerdown', function(e) {
-        var target = e.target.closest('.regione-marker-item');
-        if (target) {
-            e.preventDefault();
-            e.stopPropagation();
-            var reg = target.getAttribute('data-regione');
-            if (reg && typeof mostraRegioneLaterale === 'function') {
-                mostraRegioneLaterale(reg);
-            }
-        }
-    }, { passive: false });
     </script>
     """
     )
@@ -1682,14 +1674,16 @@ def genera_mappa_completa(day_index: int, nome_file: str):
     </div>
     """
     map_italia.get_root().html.add_child(folium.Element(header_date_html))
+
     # ==========================================
-    map_italia.get_root().html.add_child(folium.Element("""
+    # SBLOCCO DEFINITIVO TOUCH PER I MARKER REGIONALI (Stile Windy)
+    # ==========================================
+    script_fix_touch_marker = """
     <script>
     document.addEventListener("DOMContentLoaded", function() {
         setTimeout(function() {
             var markers = document.querySelectorAll('.regione-marker-item');
             markers.forEach(function(m) {
-                // Dice a Leaflet di non intercettare/bloccare i tocchi su questo cerchio
                 if (typeof L !== 'undefined' && L.DomEvent) {
                     L.DomEvent.disableClickPropagation(m);
                     L.DomEvent.disableScrollPropagation(m);
@@ -1704,13 +1698,14 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                     }
                 };
 
-                // Ascolta sia il tocco mobile che il click del mouse
-                m.addEventListener('pointerdown', attivaRegione, { passive: false });
+                m.addEventListener('click', attivaRegione, { passive: false });
+                m.addEventListener('touchend', attivaRegione, { passive: false });
             });
         }, 500);
     });
     </script>
-    """))
+    """
+    map_italia.get_root().html.add_child(folium.Element(script_fix_touch_marker))
 
     map_italia.save(nome_file)
     print(f"✅ Mappa salvata con successo in: {nome_file}")
