@@ -1069,14 +1069,14 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         id_pulito = r_nome.replace(" ", "-").replace("'", "-")
         html_indicatore_nativo = f"""
         <div class="regione-marker-item" data-regione="{id_pulito}" title="{r_nome}"
-             style="width: 26px; height: 26px; background-color: white; border: 3px solid #2c3e50;
+             style="width: 36px; height: 36px; background-color: white; border: 3px solid #2c3e50;
                     border-radius: 50%; cursor: pointer; box-shadow: 0px 2px 6px rgba(0,0,0,0.3);
-                    transform: translate(-13px, -13px); z-index: 99999; pointer-events: auto !important;"></div>
+                    transform: translate(-18px, -18px); z-index: 99999; pointer-events: auto !important;"></div>
         """
         folium.Marker(
             location=coord,
             icon=folium.DivIcon(
-                html=html_indicatore_nativo, icon_size=(26, 26)
+                html=html_indicatore_nativo, icon_size=(36, 36)
             ),
         ).add_to(map_italia)
 
@@ -1090,8 +1090,15 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             touch-action: manipulation !important;
             cursor: pointer !important;
         }
-        .v-filtro { opacity: 0 !important; pointer-events: none !important; transition: opacity 0.2s ease; }
-        .v-attivo { opacity: 0.7 !important; pointer-events: auto !important; }
+        .v-filtro { 
+            opacity: 0 !important; 
+            pointer-events: none !important; 
+            transition: opacity 0.2s ease; 
+        }
+        .v-attivo { 
+            opacity: 0.7 !important; 
+            pointer-events: none !important; 
+        }
         .sfumatura-a1dab4 { fill: url(#grad-a1dab4) !important; } .sfumatura-41b6c4 { fill: url(#grad-41b6c4) !important; }
         .sfumatura-225ea8 { fill: url(#grad-225ea8) !important; } .sfumatura-001d58 { fill: url(#grad-001d58) !important; }
         .sfumatura-1a9850 { fill: url(#grad-1a9850) !important; } .sfumatura-fee08b { fill: url(#grad-fee08b) !important; }
@@ -1675,8 +1682,23 @@ def genera_mappa_completa(day_index: int, nome_file: str):
     """
     map_italia.get_root().html.add_child(folium.Element(header_date_html))
 
+    for r_nome, coord in REGIONI_COORDINATE.items():
+        id_pulito = r_nome.replace(" ", "-").replace("'", "-")
+        html_indicatore_nativo = f"""
+        <div class="regione-marker-item" data-regione="{id_pulito}" title="{r_nome}"
+             style="width: 36px; height: 36px; background-color: white; border: 3px solid #2c3e50;
+                    border-radius: 50%; cursor: pointer; box-shadow: 0px 2px 6px rgba(0,0,0,0.3);
+                    transform: translate(-18px, -18px); z-index: 99999; pointer-events: auto !important;"></div>
+        """
+        folium.Marker(
+            location=coord,
+            icon=folium.DivIcon(
+                html=html_indicatore_nativo, icon_size=(36, 36)
+            ),
+        ).add_to(map_italia)
+
     # ==========================================
-    # SBLOCCO DEFINITIVO TOUCH PER I MARKER REGIONALI (Stile Windy)
+    # SBLOCCO DEFINITIVO TOUCH PER I MARKER REGIONALI
     # ==========================================
     script_fix_touch_marker = """
     <script>
@@ -1690,8 +1712,10 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                 }
 
                 var attivaRegione = function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
+                    if (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
                     var reg = m.getAttribute('data-regione');
                     if (reg && typeof mostraRegioneLaterale === 'function') {
                         mostraRegioneLaterale(reg);
@@ -1699,9 +1723,13 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                 };
 
                 m.addEventListener('click', attivaRegione, { passive: false });
+                m.addEventListener('touchstart', attivaRegione, { passive: false });
                 m.addEventListener('touchend', attivaRegione, { passive: false });
+
+                m.style.pointerEvents = "auto";
+                m.style.touchAction = "manipulation";
             });
-        }, 500);
+        }, 1000);
     });
     </script>
     """
