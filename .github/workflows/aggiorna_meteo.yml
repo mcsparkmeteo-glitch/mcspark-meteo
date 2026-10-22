@@ -41,6 +41,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # Sincronizza eventuali modifiche remote prima del commit per evitare conflitti
+          git pull origin main --rebase || true
+
           git add index.html day1.html day2.html day3.html
 
           git diff --cached --quiet && echo "Nessuna modifica da pushare" && exit 0
