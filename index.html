@@ -17,23 +17,24 @@
             background-color: #2c3e50;
             background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
             background-size: 4px 4px;
-            padding: 8px 0 10px 0;
+            padding: 10px 0 12px 0;
             box-shadow: 0 4px 15px rgba(0,0,0,0.25);
             position: relative;
             z-index: 1000;
         }
         h2 { 
-            margin: 0 0 6px 0; 
+            margin: 0 0 8px 0; 
             color: #ffffff; 
-            font-size: 18px; 
+            font-size: 20px; 
             letter-spacing: 0.5px;
         }
-        .btn-bar button {
+        .btn-bar { margin-bottom: 0px; }
+        button {
             display: inline-block;
             text-decoration: none;
             margin: 0 4px;
-            padding: 6px 14px;
-            font-size: 12px;
+            padding: 8px 16px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             border-radius: 6px;
@@ -43,109 +44,23 @@
             transition: all 0.2s ease;
             text-align: center;
         }
-        .btn-bar button.active {
+        button:hover {
+            background-color: #415b76;
+            color: #ffffff;
+            border-color: #cbd5e1;
+        }
+        button.active {
             background-color: #ffffff !important;
             color: #2c3e50 !important;
             border-color: #ffffff !important;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
-        iframe { 
-            width: 100%; 
-            height: calc(100dvh - 65px); 
-            border: none; 
-            display: block; 
-            position: absolute;
-            top: 65px;
-            left: 0;
-            z-index: 1;
-        }
-
-        .mobile-nav-bar { display: none; }
-        .btn-chiudi-sheet { display: none; }
-        #pannello-regioni-mobile, #legenda-mappa-mobile { display: none; }
+        iframe { width: 100%; height: calc(100dvh - 75px); border: none; display: block; }
 
         @media (max-width: 768px) {
-            .mobile-nav-bar {
-                display: flex !important;
-                position: fixed !important;
-                bottom: 12px !important;
-                left: 10px !important;
-                right: 10px !important;
-                height: 56px !important;
-                background: #2c3e50 !important;
-                border-radius: 14px !important;
-                z-index: 2147483647 !important;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
-                pointer-events: auto !important;
-                touch-action: manipulation !important;
-                border: 1px solid rgba(255,255,255,0.3);
-            }
-            .mobile-nav-btn {
-                flex: 1 !important;
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: center !important;
-                justify-content: center !important;
-                color: #cbd5e1 !important;
-                font-size: 10px !important;
-                font-weight: bold !important;
-                background: none !important;
-                border: none !important;
-                padding: 4px 0 !important;
-                cursor: pointer !important;
-                pointer-events: auto !important;
-                touch-action: manipulation !important;
-            }
-            .mobile-nav-btn span { font-size: 18px !important; margin-bottom: 2px !important; pointer-events: none !important; }
-
-            #pannello-regioni-mobile, #legenda-mappa-mobile {
-                position: fixed !important;
-                top: auto !important;
-                left: 0 !important;
-                right: 0 !important;
-                bottom: -100% !important;
-                display: none !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                height: auto !important;
-                max-height: 55dvh !important;
-                border-radius: 18px 18px 0 0 !important;
-                border: none !important;
-                border-top: 3px solid #2c3e50 !important;
-                transition: bottom 0.3s ease !important;
-                z-index: 2147483646 !important;
-                box-shadow: 0 -5px 25px rgba(0,0,0,0.4) !important;
-                background: #ffffff !important;
-                padding: 12px 14px !important;
-                padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px)) !important;
-                box-sizing: border-box !important;
-                overflow-y: auto !important;
-                pointer-events: auto !important;
-                touch-action: pan-y !important;
-            }
-            .sheet-aperto { display: block !important; bottom: 0 !important; }
-            .btn-chiudi-sheet {
-                display: block !important;
-                position: absolute !important;
-                top: 10px !important;
-                right: 15px !important;
-                background: #e2e8f0 !important;
-                border: none !important;
-                border-radius: 50% !important;
-                width: 32px !important;
-                height: 32px !important;
-                font-weight: bold !important;
-                color: #334155 !important;
-                font-size: 16px !important;
-                line-height: 32px !important;
-                text-align: center !important;
-                cursor: pointer !important;
-                pointer-events: auto !important;
-                touch-action: manipulation !important;
-            }
-            .drag-handle { width: 40px; height: 5px; background: #cbd5e1; border-radius: 3px; margin: 0 auto 10px auto; }
-            .griglia-regioni-mobile { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
-            h4 { margin: 0 0 10px 0; font-size: 13px; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; text-align: center; font-weight: bold; }
+            h2 { font-size: 16px; margin-bottom: 6px; }
+            button { padding: 6px 10px; font-size: 11px; }
+            iframe { height: calc(100dvh - 65px); }
         }
     </style>
 </head>
@@ -161,62 +76,12 @@
     
     <iframe id="frame" src="day1.html?v=1"></iframe>
 
-    <div class="mobile-nav-bar">
-        <button class="mobile-nav-btn" onclick="apriSheetMobile('pannello-regioni-mobile')">
-            <span>📍</span>Regioni
-        </button>
-        <button class="mobile-nav-btn" onclick="apriSheetMobile('legenda-mappa-mobile')">
-            <span>⚠️</span>Legenda
-        </button>
-    </div>
-
-    <div id="pannello-regioni-mobile">
-        <div class="drag-handle"></div>
-        <button class="btn-chiudi-sheet" onclick="chiudiTuttiSheets()">✕</button>
-        <h4>📍 SCEGLI REGIONE</h4>
-        <div class="griglia-regioni-mobile">
-            <button onclick="selezionaRegioneDaMobile('Abruzzo')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Abruzzo</button><button onclick="selezionaRegioneDaMobile('Basilicata')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Basilicata</button><button onclick="selezionaRegioneDaMobile('Calabria')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Calabria</button><button onclick="selezionaRegioneDaMobile('Campania')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Campania</button><button onclick="selezionaRegioneDaMobile('Emilia-Romagna')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Emilia-Romagna</button><button onclick="selezionaRegioneDaMobile('Friuli-Venezia-Giulia')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Friuli-Venezia Giulia</button><button onclick="selezionaRegioneDaMobile('Lazio')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Lazio</button><button onclick="selezionaRegioneDaMobile('Liguria')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Liguria</button><button onclick="selezionaRegioneDaMobile('Lombardia')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Lombardia</button><button onclick="selezionaRegioneDaMobile('Marche')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Marche</button><button onclick="selezionaRegioneDaMobile('Molise')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Molise</button><button onclick="selezionaRegioneDaMobile('Piemonte')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Piemonte</button><button onclick="selezionaRegioneDaMobile('Puglia')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Puglia</button><button onclick="selezionaRegioneDaMobile('Sardegna')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Sardegna</button><button onclick="selezionaRegioneDaMobile('Sicilia')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Sicilia</button><button onclick="selezionaRegioneDaMobile('Toscana')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Toscana</button><button onclick="selezionaRegioneDaMobile('Trentino-Alto-Adige')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Trentino-Alto Adige</button><button onclick="selezionaRegioneDaMobile('Umbria')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Umbria</button><button onclick="selezionaRegioneDaMobile('Valle-d-Aosta')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Valle d'Aosta</button><button onclick="selezionaRegioneDaMobile('Veneto')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Veneto</button>
-        </div>
-    </div>
-
-    <div id="legenda-mappa-mobile">
-        <div class="drag-handle"></div>
-        <button class="btn-chiudi-sheet" onclick="chiudiTuttiSheets()">✕</button>
-        <h4>🎨 Legenda & Allerte</h4>
-        <div style="text-align:left; font-size:12px; line-height:1.8; padding:5px 10px;">
-            🔴 <b>Allerta Rossa</b><br>
-            🟠 <b>Allerta Arancione</b><br>
-            🟡 <b>Allerta Gialla</b><br>
-            ⚠️⚡ <b>Rischio Temporali</b><br>
-            ❄️ <b>Neve Prevista</b>
-        </div>
-    </div>
-
 <script>
 function carica(file, elemento) {
     document.getElementById('frame').src = file + '?v=' + new Date().getTime();
-    var bottoni = document.querySelectorAll('.header-bar button');
+    var bottoni = document.querySelectorAll('.btn-bar button');
     bottoni.forEach(function(btn) { btn.classList.remove('active'); });
     elemento.classList.add('active');
-}
-
-function chiudiTuttiSheets() {
-    var regMob = document.getElementById('pannello-regioni-mobile');
-    var legMob = document.getElementById('legenda-mappa-mobile');
-    if (regMob) regMob.classList.remove('sheet-aperto');
-    if (legMob) legMob.classList.remove('sheet-aperto');
-}
-
-function apriSheetMobile(idSheet) {
-    if (window.innerWidth <= 768) {
-        chiudiTuttiSheets();
-        var target = document.getElementById(idSheet);
-        if (target) target.classList.add('sheet-aperto');
-    }
-}
-
-function selezionaRegioneDaMobile(idReg) {
-    chiudiTuttiSheets();
 }
 </script>
 </body>
