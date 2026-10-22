@@ -9,9 +9,9 @@ from shapely.geometry import Point, shape
 from urllib3.util import Retry
 from province_italia import PROVINCE_BY_REGIONE, REGIONI_COORDINATE
 
-# ===========================================
+# ==========================================
 # CONFIGURAZIONE SESSIONE HTTP RETRY
-# ===========================================
+# ==========================================
 session = requests.Session()
 retries = Retry(
     total=3,
@@ -1065,12 +1065,11 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         </div>
         """
 
-    # Generazione dei pulsanti delle regioni per il pannello mobile
     bottoni_regioni_mobile_html = ""
     for r_nome in sorted(REGIONI_COORDINATE.keys()):
         id_pulito = r_nome.replace(" ", "-").replace("'", "-")
         bottoni_regioni_mobile_html += f"""
-        <button onclick="selezionaRegioneDaMobile('{id_pulito}')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center;">
+        <button onclick="selezionaRegioneDaMobile('{id_pulito}')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
             {r_nome}
         </button>
         """
@@ -1163,7 +1162,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             overflow-y: auto;
         }
         #pannello-regioni-mobile {
-            display: none; /* Solo mobile */
+            display: none;
         }
         #legenda-mappa-mcspark {
             position: fixed;
@@ -1209,27 +1208,29 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         .btn-chiudi-sheet { display: none; }
 
         /* ========================================================= */
-        /* STILI MOBILE-FIRST (SMARTPHONE iOS/ANDROID) CORRETTI      */
+        /* STILI MOBILE-FIRST (SMARTPHONE iOS/ANDROID) BLINDATI      */
         /* ========================================================= */
         @media (max-width: 768px) {
             body, html {
                 height: 100% !important;
                 touch-action: manipulation !important;
+                overflow: hidden !important;
             }
 
             .mobile-nav-bar {
                 display: flex !important;
                 position: fixed !important;
-                bottom: 14px !important;
-                left: 12px !important;
-                right: 12px !important;
-                height: 55px !important;
+                bottom: 12px !important;
+                left: 10px !important;
+                right: 10px !important;
+                height: 56px !important;
                 background: #2c3e50 !important;
                 border-radius: 14px !important;
-                z-index: 100000 !important;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
+                z-index: 2147483647 !important; /* Massimo z-index possibile */
+                box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
                 pointer-events: auto !important;
-                border: 1px solid rgba(255,255,255,0.2);
+                touch-action: manipulation !important;
+                border: 1px solid rgba(255,255,255,0.3);
             }
             .mobile-nav-btn {
                 flex: 1 !important;
@@ -1249,12 +1250,12 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             }
             .mobile-nav-btn.active {
                 color: #ffffff !important;
-                background-color: rgba(255,255,255,0.15) !important;
+                background-color: rgba(255,255,255,0.2) !important;
                 border-radius: 10px;
             }
-            .mobile-nav-btn span { font-size: 18px !important; margin-bottom: 2px !important; }
+            .mobile-nav-btn span { font-size: 18px !important; margin-bottom: 2px !important; pointer-events: none !important; }
 
-            /* PANNELLI A SCOMPARSA OTTIMIZZATI PER TOUCH */
+            /* PANNELLI A SCOMPARSA BLINDATI PER TOUCH */
             #sidebar-tabelle-mcspark, #pannello-meteo-pulsanti, #pannello-regioni-mobile, #legenda-mappa-mcspark {
                 position: fixed !important;
                 top: auto !important;
@@ -1265,16 +1266,16 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                 width: 100% !important;
                 max-width: 100% !important;
                 height: auto !important;
-                max-height: 50dvh !important;
+                max-height: 55dvh !important;
                 border-radius: 18px 18px 0 0 !important;
                 border: none !important;
                 border-top: 3px solid #2c3e50 !important;
                 transition: bottom 0.3s ease !important;
-                z-index: 99999 !important;
-                box-shadow: 0 -5px 25px rgba(0,0,0,0.3) !important;
+                z-index: 2147483646 !important;
+                box-shadow: 0 -5px 25px rgba(0,0,0,0.4) !important;
                 background: #ffffff !important;
                 padding: 12px 14px !important;
-                padding-bottom: calc(65px + env(safe-area-inset-bottom, 0px)) !important;
+                padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px)) !important;
                 box-sizing: border-box !important;
                 overflow-y: auto !important;
                 pointer-events: auto !important;
@@ -1294,15 +1295,16 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                 background: #e2e8f0 !important;
                 border: none !important;
                 border-radius: 50% !important;
-                width: 30px !important;
-                height: 30px !important;
+                width: 32px !important;
+                height: 32px !important;
                 font-weight: bold !important;
                 color: #334155 !important;
                 font-size: 16px !important;
-                line-height: 30px !important;
+                line-height: 32px !important;
                 text-align: center !important;
                 cursor: pointer !important;
                 pointer-events: auto !important;
+                touch-action: manipulation !important;
             }
 
             .drag-handle {
@@ -1321,17 +1323,17 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             }
 
             .opzione-radio {
-                padding: 8px 0;
+                padding: 10px 0;
                 font-size: 13px;
                 border-bottom: 1px solid #f1f5f9;
             }
             
             .wrapper-footer-mobile {
-                bottom: 70px !important;
+                bottom: 75px !important;
             }
             .logo-mcspark-mobile {
-                bottom: 105px !important;
-                width: 50px !important;
+                bottom: 110px !important;
+                width: 45px !important;
             }
         }
     </style>
@@ -1358,7 +1360,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             <h2 style='text-align:center; color:#2c3e50; font-size:15px; margin-top:5px;'>📊 Report Dettagliato</h2>
             <div class="messaggio-benvenuto-sidebar">
                 <span style="font-size: 24px;">🗺️</span><br><br>
-                <b>Clicca sul cerchietto della regione sulla mappa</b> (o usa il menu <b>Regioni</b> in basso su smartphone) per vedere i dati provinciali.
+                <b>Usa il menu "Regioni" in basso</b> o clicca sui marker per vedere i dati provinciali.
             </div>
         </div>
         <div id="contenitore-tabelle-attive-sidebar" style="display:none;">"""
@@ -1450,7 +1452,9 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         if (window.innerWidth <= 768) {
             chiudiTuttiSheets();
             var target = document.getElementById(idSheet);
-            if (target) target.classList.add('sheet-aperto');
+            if (target) {
+                target.classList.add('sheet-aperto');
+            }
         }
     }
 
@@ -1712,7 +1716,6 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             ),
         ).add_to(map_italia)
 
-    # Sblocco click desktop sui marker
     script_fix_touch_marker = """
     <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -1750,7 +1753,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
 
 
 # ==========================================
-# GENERAZIONE FILE INDEX + ESECUZIONE
+# GENERAZIONE FILE INDEX + ESECUZIONE (IFRAME FULLSCREEN 100Dvh)
 # ==========================================
 def genera_index_html():
     d0 = ora_italiana.strftime("%d/%m/%Y")
@@ -1777,15 +1780,15 @@ def genera_index_html():
             background-color: #2c3e50;
             background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
             background-size: 4px 4px;
-            padding: 10px 0 12px 0;
+            padding: 8px 0 10px 0;
             box-shadow: 0 4px 15px rgba(0,0,0,0.25);
             position: relative;
             z-index: 1000;
         }
         h2 { 
-            margin: 0 0 8px 0; 
+            margin: 0 0 6px 0; 
             color: #ffffff; 
-            font-size: 20px; 
+            font-size: 18px; 
             letter-spacing: 0.5px;
         }
         .btn-bar { margin-bottom: 0px; }
@@ -1793,8 +1796,8 @@ def genera_index_html():
             display: inline-block;
             text-decoration: none;
             margin: 0 4px;
-            padding: 8px 16px;
-            font-size: 13px;
+            padding: 6px 14px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             border-radius: 6px;
@@ -1815,12 +1818,28 @@ def genera_index_html():
             border-color: #ffffff !important;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
-        iframe { width: 100%; height: calc(100dvh - 75px); border: none; display: block; }
+        /* IFRAME AL 100% PER EVITARE IL BLOCCO TOUCH MOBILE */
+        iframe { 
+            width: 100%; 
+            height: 100dvh; 
+            border: none; 
+            display: block; 
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .header-bar {
+            position: relative;
+            z-index: 10;
+        }
 
         @media (max-width: 768px) {
-            h2 { font-size: 16px; margin-bottom: 6px; }
-            button { padding: 6px 10px; font-size: 11px; }
-            iframe { height: calc(100dvh - 65px); }
+            .header-bar {
+                padding: 6px 0 8px 0;
+            }
+            h2 { font-size: 15px; margin-bottom: 4px; }
+            button { padding: 5px 8px; font-size: 11px; }
         }
     </style>
 </head>
