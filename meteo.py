@@ -1065,6 +1065,16 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         </div>
         """
 
+    # Generazione dei pulsanti delle regioni per il pannello mobile
+    bottoni_regioni_mobile_html = ""
+    for r_nome in sorted(REGIONI_COORDINATE.keys()):
+        id_pulito = r_nome.replace(" ", "-").replace("'", "-")
+        bottoni_regioni_mobile_html += f"""
+        <button onclick="selezionaRegioneDaMobile('{id_pulito}')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center;">
+            {r_nome}
+        </button>
+        """
+
     for r_nome, coord in REGIONI_COORDINATE.items():
         id_pulito = r_nome.replace(" ", "-").replace("'", "-")
         html_indicatore_nativo = f"""
@@ -1152,6 +1162,9 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             max-height: 85vh;
             overflow-y: auto;
         }
+        #pannello-regioni-mobile {
+            display: none; /* Solo mobile */
+        }
         #legenda-mappa-mcspark {
             position: fixed;
             bottom: 100px;
@@ -1174,7 +1187,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         .scheda-meteo h3 { margin-top: 5px !important; margin-bottom: 15px !important; }
         .scheda-meteo table { margin-top: 15px !important; }
 
-        #pannello-meteo-pulsanti h4 {
+        #pannello-meteo-pulsanti h4, #pannello-regioni-mobile h4 {
             margin: 0 0 10px 0;
             font-size: 13px;
             color: #2c3e50;
@@ -1242,7 +1255,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             .mobile-nav-btn span { font-size: 18px !important; margin-bottom: 2px !important; }
 
             /* PANNELLI A SCOMPARSA OTTIMIZZATI PER TOUCH */
-            #sidebar-tabelle-mcspark, #pannello-meteo-pulsanti, #legenda-mappa-mcspark {
+            #sidebar-tabelle-mcspark, #pannello-meteo-pulsanti, #pannello-regioni-mobile, #legenda-mappa-mcspark {
                 position: fixed !important;
                 top: auto !important;
                 left: 0 !important;
@@ -1252,7 +1265,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                 width: 100% !important;
                 max-width: 100% !important;
                 height: auto !important;
-                max-height: 45dvh !important;
+                max-height: 50dvh !important;
                 border-radius: 18px 18px 0 0 !important;
                 border: none !important;
                 border-top: 3px solid #2c3e50 !important;
@@ -1300,6 +1313,13 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                 margin: 0 auto 10px auto;
             }
 
+            .griglia-regioni-mobile {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                margin-top: 10px;
+            }
+
             .opzione-radio {
                 padding: 8px 0;
                 font-size: 13px;
@@ -1338,7 +1358,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             <h2 style='text-align:center; color:#2c3e50; font-size:15px; margin-top:5px;'>📊 Report Dettagliato</h2>
             <div class="messaggio-benvenuto-sidebar">
                 <span style="font-size: 24px;">🗺️</span><br><br>
-                <b>Clicca direttamente sul cerchietto vicino alla regione</b> o usa la ricerca in alto a destra per vedere i dati provinciali.
+                <b>Clicca sul cerchietto della regione sulla mappa</b> (o usa il menu <b>Regioni</b> in basso su smartphone) per vedere i dati provinciali.
             </div>
         </div>
         <div id="contenitore-tabelle-attive-sidebar" style="display:none;">"""
@@ -1367,6 +1387,18 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         </div>
     </div>
 
+    <!-- PANNELLO SELEZIONE REGIONI MOBILE -->
+    <div id="pannello-regioni-mobile">
+        <div class="drag-handle"></div>
+        <button class="btn-chiudi-sheet" onclick="chiudiTuttiSheets()">✕</button>
+        <h4>📍 SCEGLI REGIONE</h4>
+        <div class="griglia-regioni-mobile">
+            """
+        + bottoni_regioni_mobile_html
+        + """
+        </div>
+    </div>
+
     <!-- LEGENDA -->
     <div id="legenda-mappa-mcspark">
         <div class="drag-handle"></div>
@@ -1379,10 +1411,13 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         <div class="legenda-riga"><span style="font-size:12px;">❄️</span> <b>Neve Prevista</b></div>
     </div>
 
-    <!-- BARRA NAVIGAZIONE MOBILE IN BASSO -->
+    <!-- BARRA NAVIGAZIONE MOBILE IN BASSO (5 PULSANTI) -->
     <div class="mobile-nav-bar">
         <button class="mobile-nav-btn" onclick="apriSheetMobile('pannello-meteo-pulsanti')">
             <span>🎨</span>Filtri
+        </button>
+        <button class="mobile-nav-btn" onclick="apriSheetMobile('pannello-regioni-mobile')">
+            <span>📍</span>Regioni
         </button>
         <button class="mobile-nav-btn" onclick="apriSearchMobile()">
             <span>🔍</span>Cerca
@@ -1402,10 +1437,12 @@ def genera_mappa_completa(day_index: int, nome_file: str):
     function chiudiTuttiSheets() {
         var sidebar = document.getElementById('sidebar-tabelle-mcspark');
         var pannello = document.getElementById('pannello-meteo-pulsanti');
+        var regioniMob = document.getElementById('pannello-regioni-mobile');
         var legenda = document.getElementById('legenda-mappa-mcspark');
         
         if (sidebar) sidebar.classList.remove('sheet-aperto');
         if (pannello) pannello.classList.remove('sheet-aperto');
+        if (regioniMob) regioniMob.classList.remove('sheet-aperto');
         if (legenda) legenda.classList.remove('sheet-aperto');
     }
 
@@ -1423,6 +1460,11 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             var input = document.getElementById('cercaProvincia');
             if (input) input.focus();
         }, 300);
+    }
+
+    function selezionaRegioneDaMobile(idReg) {
+        chiudiTuttiSheets();
+        mostraRegioneLaterale(idReg);
     }
 
     function mostraRegione(idRegione) {
@@ -1617,6 +1659,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         </div>
     </div>
 
+    <!-- SCRITTA AGGIORNAMENTO IN ALTO A SINISTRA -->
     <div style="position: fixed; top: 12px; left: 15px; background-color: rgba(255,255,255,0.9); padding: 5px 10px; border-radius: 4px; z-index: 9999; font-family: Arial, sans-serif; font-size: 11px; color: #005580; font-weight: bold; border: 1px solid #ccc; box-shadow: 0px 2px 5px rgba(0,0,0,0.1); white-space: nowrap;">
       {STRINGA_AGGIORNAMENTO}
     </div>
@@ -1652,35 +1695,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
     });
     </script>
     """
-
     map_italia.get_root().html.add_child(folium.Element(script_memoria_filtri))
-
-    d0_str = ora_italiana.strftime("%d/%m/%Y")
-    d1_str = (ora_italiana + timedelta(days=1)).strftime("%d/%m/%Y")
-    d2_str = (ora_italiana + timedelta(days=2)).strftime("%d/%m/%Y")
-
-    header_date_html = f"""
-    <div style="position: fixed; top: 0; left: 0; right: 0; height: 45px; background-color: #2c3e50; 
-                z-index: 100000; display: flex; align-items: center; justify-content: center; gap: 8px; 
-                box-shadow: 0 2px 10px rgba(0,0,0,0.3); font-family: Arial, sans-serif;">
-        <a href="day1.html" target="_self" style="text-decoration:none;">
-            <button style="padding: 6px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; border: 1px solid #4a5d71; 
-                           background-color: {'#ffffff' if day_index == 0 else '#34495e'}; 
-                           color: {'#2c3e50' if day_index == 0 else '#cbd5e1'}; cursor: pointer;">{d0_str}</button>
-        </a>
-        <a href="day2.html" target="_self" style="text-decoration:none;">
-            <button style="padding: 6px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; border: 1px solid #4a5d71; 
-                           background-color: {'#ffffff' if day_index == 1 else '#34495e'}; 
-                           color: {'#2c3e50' if day_index == 1 else '#cbd5e1'}; cursor: pointer;">{d1_str}</button>
-        </a>
-        <a href="day3.html" target="_self" style="text-decoration:none;">
-            <button style="padding: 6px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; border: 1px solid #4a5d71; 
-                           background-color: {'#ffffff' if day_index == 2 else '#34495e'}; 
-                           color: {'#2c3e50' if day_index == 2 else '#cbd5e1'}; cursor: pointer;">{d2_str}</button>
-        </a>
-    </div>
-    """
-    map_italia.get_root().html.add_child(folium.Element(header_date_html))
 
     for r_nome, coord in REGIONI_COORDINATE.items():
         id_pulito = r_nome.replace(" ", "-").replace("'", "-")
@@ -1697,9 +1712,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             ),
         ).add_to(map_italia)
 
-    # ==========================================
-    # SBLOCCO DEFINITIVO TOUCH PER I MARKER REGIONALI
-    # ==========================================
+    # Sblocco click desktop sui marker
     script_fix_touch_marker = """
     <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -1723,9 +1736,6 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                 };
 
                 m.addEventListener('click', attivaRegione, { passive: false });
-                m.addEventListener('touchstart', attivaRegione, { passive: false });
-                m.addEventListener('touchend', attivaRegione, { passive: false });
-
                 m.style.pointerEvents = "auto";
                 m.style.touchAction = "manipulation";
             });
