@@ -9,9 +9,9 @@ from shapely.geometry import Point, shape
 from urllib3.util import Retry
 from province_italia import PROVINCE_BY_REGIONE, REGIONI_COORDINATE
 
-# ==========================================
+# ===========================================
 # CONFIGURAZIONE SESSIONE HTTP RETRY
-# ==========================================
+# ===========================================
 session = requests.Session()
 retries = Retry(
     total=3,
