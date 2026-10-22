@@ -803,7 +803,6 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         max_zoom=19,
     ).add_to(map_italia)
 
-    # Iniezione cerchi mari e meteo nelle singole mappe dayX.html
     for d in dati_render_mappa:
         raggio_mappa = 28000
         hex_p = (
@@ -909,7 +908,6 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             ),
         ).add_to(map_italia)
 
-    # CSS di base per i filtri e l'interazione desktop all'interno delle mappe
     interfaccia_mappa_html = """
     <style>
         .leaflet-container { touch-action: manipulation !important; }
@@ -940,7 +938,6 @@ def genera_mappa_completa(day_index: int, nome_file: str):
     """
     map_italia.get_root().html.add_child(folium.Element(interfaccia_mappa_html))
 
-    # Branding e timestamp all'interno della mappa
     branding_html = f"""
     <div style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 999; display: flex; flex-direction: column; align-items: center; gap: 6px; font-family: Arial, sans-serif; pointer-events: none;">
         <div style="background-color: rgba(200, 0, 0, 0.95); color: white; padding: 5px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; border: 2px solid white; box-shadow: 0px 3px 8px rgba(0,0,0,0.3); white-space: nowrap; text-align: center;">
@@ -956,59 +953,34 @@ def genera_mappa_completa(day_index: int, nome_file: str):
     """
     map_italia.get_root().html.add_child(folium.Element(branding_html))
 
-    # Script per comunicare i click delle regioni dalla mappa alla pagina principale index.html
-    script_comunicazione = """
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        setTimeout(function() {
-            var markers = document.querySelectorAll('.regione-marker-item');
-            markers.forEach(function(m) {
-                var attivaRegione = function(e) {
-                    if (e) { e.preventDefault(); e.stopPropagation(); }
-                    var reg = m.getAttribute('data-regione');
-                    if (reg && window.parent && typeof window.parent.mostraRegioneDaIframe === 'function') {
-                        window.parent.mostraRegioneDaIframe(reg);
-                    }
-                };
-                m.addEventListener('click', attivaRegione, { passive: false });
-                m.style.pointerEvents = "auto";
-                m.style.touchAction = "manipulation";
-            });
-        }, 1000);
-    });
-    </script>
-    """
-    map_italia.get_root().html.add_child(folium.Element(script_comunicazione))
-
     map_italia.save(nome_file)
     print(f"✅ Mappa salvata con successo in: {nome_file}")
 
 
 # ==========================================
-# GENERAZIONE FILE INDEX (CON BARRA MOBILE ESTERNA ALL'IFRAME)
+# GENERAZIONE FILE INDEX COMPLETO
 # ==========================================
 def genera_index_html():
     d0 = ora_italiana.strftime("%d/%m/%Y")
     d1 = (ora_italiana + timedelta(days=1)).strftime("%d/%m/%Y")
     d2 = (ora_italiana + timedelta(days=2)).strftime("%d/%m/%Y")
 
-    # Generazione dei bottoni regioni per il pannello mobile principale
     bottoni_regioni_mobile_html = ""
     for r_nome in sorted(REGIONI_COORDINATE.keys()):
         id_pulito = r_nome.replace(" ", "-").replace("'", "-")
-        bottoni_regioni_mobile_html += f"""
-        <button onclick="selezionaRegioneDaMobile('{id_pulito}')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            {r_nome}
-        </button>
-        """
+        bottoni_regioni_mobile_html += (
+            f'<button onclick="selezionaRegioneDaMobile(\'{id_pulito}\')" '
+            'style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">'
+            f"{r_nome}</button>"
+        )
 
-    html_content = f"""<!DOCTYPE html>
+    html_content = """<!DOCTYPE html>
 <html>
 <head>
     <title>Previsioni Meteo McSpark</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        html, body {{ 
+        html, body { 
             font-family: Arial, sans-serif; 
             text-align: center; 
             margin: 0; 
@@ -1016,8 +988,8 @@ def genera_index_html():
             background-color: #f8f9fa; 
             height: 100dvh;
             overflow: hidden;
-        }}
-        .header-bar {{
+        }
+        .header-bar {
             background-color: #2c3e50;
             background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
             background-size: 4px 4px;
@@ -1025,14 +997,14 @@ def genera_index_html():
             box-shadow: 0 4px 15px rgba(0,0,0,0.25);
             position: relative;
             z-index: 1000;
-        }}
-        h2 {{ 
+        }
+        h2 { 
             margin: 0 0 6px 0; 
             color: #ffffff; 
             font-size: 18px; 
             letter-spacing: 0.5px;
-        }}
-        button {{
+        }
+        .btn-bar button {
             display: inline-block;
             text-decoration: none;
             margin: 0 4px;
@@ -1046,37 +1018,30 @@ def genera_index_html():
             color: #cbd5e1;
             transition: all 0.2s ease;
             text-align: center;
-        }}
-        button.active {{
+        }
+        .btn-bar button.active {
             background-color: #ffffff !important;
             color: #2c3e50 !important;
             border-color: #ffffff !important;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }}
-        iframe {{ 
+        }
+        iframe { 
             width: 100%; 
-            height: 100dvh; 
+            height: calc(100dvh - 65px); 
             border: none; 
             display: block; 
             position: absolute;
-            top: 0;
+            top: 65px;
             left: 0;
             z-index: 1;
-        }}
-        .header-bar {{
-            position: relative;
-            z-index: 10;
-        }}
+        }
 
-        /* ========================================================= */
-        /* BARRA E PANNELLI MOBILI ESTERNI ALL'IFRAME (100% TOUCH OK) */
-        /* ========================================================= */
-        .mobile-nav-bar {{ display: none; }}
-        .btn-chiudi-sheet {{ display: none; }}
-        #pannello-regioni-mobile, #pannello-meteo-pulsanti-mobile, #legenda-mappa-mobile {{ display: none; }}
+        .mobile-nav-bar { display: none; }
+        .btn-chiudi-sheet { display: none; }
+        #pannello-regioni-mobile, #legenda-mappa-mobile { display: none; }
 
-        @media (max-width: 768px) {{
-            .mobile-nav-bar {{
+        @media (max-width: 768px) {
+            .mobile-nav-bar {
                 display: flex !important;
                 position: fixed !important;
                 bottom: 12px !important;
@@ -1090,8 +1055,8 @@ def genera_index_html():
                 pointer-events: auto !important;
                 touch-action: manipulation !important;
                 border: 1px solid rgba(255,255,255,0.3);
-            }}
-            .mobile-nav-btn {{
+            }
+            .mobile-nav-btn {
                 flex: 1 !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -1106,10 +1071,10 @@ def genera_index_html():
                 cursor: pointer !important;
                 pointer-events: auto !important;
                 touch-action: manipulation !important;
-            }}
-            .mobile-nav-btn span {{ font-size: 18px !important; margin-bottom: 2px !important; pointer-events: none !important; }}
+            }
+            .mobile-nav-btn span { font-size: 18px !important; margin-bottom: 2px !important; pointer-events: none !important; }
 
-            #pannello-regioni-mobile, #pannello-meteo-pulsanti-mobile, #legenda-mappa-mobile {{
+            #pannello-regioni-mobile, #legenda-mappa-mobile {
                 position: fixed !important;
                 top: auto !important;
                 left: 0 !important;
@@ -1133,9 +1098,9 @@ def genera_index_html():
                 overflow-y: auto !important;
                 pointer-events: auto !important;
                 touch-action: pan-y !important;
-            }}
-            .sheet-aperto {{ display: block !important; bottom: 0 !important; }}
-            .btn-chiudi-sheet {{
+            }
+            .sheet-aperto { display: block !important; bottom: 0 !important; }
+            .btn-chiudi-sheet {
                 display: block !important;
                 position: absolute !important;
                 top: 10px !important;
@@ -1153,26 +1118,25 @@ def genera_index_html():
                 cursor: pointer !important;
                 pointer-events: auto !important;
                 touch-action: manipulation !important;
-            }}
-            .drag-handle {{ width: 40px; height: 5px; background: #cbd5e1; border-radius: 3px; margin: 0 auto 10px auto; }}
-            .griglia-regioni-mobile {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }}
-            h4 {{ margin: 0 0 10px 0; font-size: 13px; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; text-align: center; font-weight: bold; }}
-        }}
+            }
+            .drag-handle { width: 40px; height: 5px; background: #cbd5e1; border-radius: 3px; margin: 0 auto 10px auto; }
+            .griglia-regioni-mobile { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
+            h4 { margin: 0 0 10px 0; font-size: 13px; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; text-align: center; font-weight: bold; }
+        }
     </style>
 </head>
 <body>
     <div class="header-bar">
         <h2>Previsioni Meteo McSpark</h2>
         <div class="btn-bar">
-            <button onclick="carica('day1.html', this)" class="active">{d0}</button>
-            <button onclick="carica('day2.html', this)">{d1}</button>
-            <button onclick="carica('day3.html', this)">{d2}</button>
+            <button onclick="carica('day1.html', this)" class="active">D0_VAL</button>
+            <button onclick="carica('day2.html', this)">D1_VAL</button>
+            <button onclick="carica('day3.html', this)">D2_VAL</button>
         </div>
     </div>
     
     <iframe id="frame" src="day1.html?v=1"></iframe>
 
-    <!-- BARRA NAVIGAZIONE MOBILE ESTERNA (Pieni poteri di touch) -->
     <div class="mobile-nav-bar">
         <button class="mobile-nav-btn" onclick="apriSheetMobile('pannello-regioni-mobile')">
             <span>📍</span>Regioni
@@ -1182,17 +1146,15 @@ def genera_index_html():
         </button>
     </div>
 
-    <!-- PANNELLO SCEGLI REGIONE MOBILE -->
     <div id="pannello-regioni-mobile">
         <div class="drag-handle"></div>
         <button class="btn-chiudi-sheet" onclick="chiudiTuttiSheets()">✕</button>
         <h4>📍 SCEGLI REGIONE</h4>
         <div class="griglia-regioni-mobile">
-            {bottoni_regioni_mobile_html}
+            REGIONI_GRID_HTML
         </div>
     </div>
 
-    <!-- PANNELLO LEGENDA MOBILE -->
     <div id="legenda-mappa-mobile">
         <div class="drag-handle"></div>
         <button class="btn-chiudi-sheet" onclick="chiudiTuttiSheets()">✕</button>
@@ -1207,42 +1169,41 @@ def genera_index_html():
     </div>
 
 <script>
-function carica(file, elemento) {{
+function carica(file, elemento) {
     document.getElementById('frame').src = file + '?v=' + new Date().getTime();
     var bottoni = document.querySelectorAll('.header-bar button');
-    bottoni.forEach(function(btn) {{ btn.classList.remove('active'); }});
+    bottoni.forEach(function(btn) { btn.classList.remove('active'); });
     elemento.classList.add('active');
-}}
+}
 
-function chiudiTuttiSheets() {{
+function chiudiTuttiSheets() {
     var regMob = document.getElementById('pannello-regioni-mobile');
     var legMob = document.getElementById('legenda-mappa-mobile');
     if (regMob) regMob.classList.remove('sheet-aperto');
     if (legMob) legMob.classList.remove('sheet-aperto');
-}}
+}
 
-function apriSheetMobile(idSheet) {{
-    if (window.innerWidth <= 768) {{
+function apriSheetMobile(idSheet) {
+    if (window.innerWidth <= 768) {
         chiudiTuttiSheets();
         var target = document.getElementById(idSheet);
         if (target) target.classList.add('sheet-aperto');
-    }}
-}}
+    }
+}
 
-function selezionaRegioneDaMobile(idReg) {{
+function selezionaRegioneDaMobile(idReg) {
     chiudiTuttiSheets();
-    var iframe = document.getElementById('frame');
-    if (iframe && iframe.contentWindow) {{
-        iframe.contentWindow.postMessage({{ tipo: 'mostraRegione', regione: idReg }}, '*');
-    }}
-}}
-
-window.mostraRegioneDaIframe = function(idReg) {{
-    // Gestione futura se necessaria
-}};
+}
 </script>
 </body>
 </html>"""
+
+    html_content = (
+        html_content.replace("D0_VAL", d0)
+        .replace("D1_VAL", d1)
+        .replace("D2_VAL", d2)
+        .replace("REGIONI_GRID_HTML", bottoni_regioni_mobile_html)
+    )
 
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html_content)
