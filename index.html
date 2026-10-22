@@ -28,7 +28,7 @@
             font-size: 18px; 
             letter-spacing: 0.5px;
         }
-        button {
+        .btn-bar button {
             display: inline-block;
             text-decoration: none;
             margin: 0 4px;
@@ -43,7 +43,7 @@
             transition: all 0.2s ease;
             text-align: center;
         }
-        button.active {
+        .btn-bar button.active {
             background-color: #ffffff !important;
             color: #2c3e50 !important;
             border-color: #ffffff !important;
@@ -51,25 +51,18 @@
         }
         iframe { 
             width: 100%; 
-            height: 100dvh; 
+            height: calc(100dvh - 65px); 
             border: none; 
             display: block; 
             position: absolute;
-            top: 0;
+            top: 65px;
             left: 0;
             z-index: 1;
         }
-        .header-bar {
-            position: relative;
-            z-index: 10;
-        }
 
-        /* ========================================================= */
-        /* BARRA E PANNELLI MOBILI ESTERNI ALL'IFRAME (100% TOUCH OK) */
-        /* ========================================================= */
         .mobile-nav-bar { display: none; }
         .btn-chiudi-sheet { display: none; }
-        #pannello-regioni-mobile, #pannello-meteo-pulsanti-mobile, #legenda-mappa-mobile { display: none; }
+        #pannello-regioni-mobile, #legenda-mappa-mobile { display: none; }
 
         @media (max-width: 768px) {
             .mobile-nav-bar {
@@ -105,7 +98,7 @@
             }
             .mobile-nav-btn span { font-size: 18px !important; margin-bottom: 2px !important; pointer-events: none !important; }
 
-            #pannello-regioni-mobile, #pannello-meteo-pulsanti-mobile, #legenda-mappa-mobile {
+            #pannello-regioni-mobile, #legenda-mappa-mobile {
                 position: fixed !important;
                 top: auto !important;
                 left: 0 !important;
@@ -168,7 +161,6 @@
     
     <iframe id="frame" src="day1.html?v=1"></iframe>
 
-    <!-- BARRA NAVIGAZIONE MOBILE ESTERNA (Pieni poteri di touch) -->
     <div class="mobile-nav-bar">
         <button class="mobile-nav-btn" onclick="apriSheetMobile('pannello-regioni-mobile')">
             <span>📍</span>Regioni
@@ -178,97 +170,15 @@
         </button>
     </div>
 
-    <!-- PANNELLO SCEGLI REGIONE MOBILE -->
     <div id="pannello-regioni-mobile">
         <div class="drag-handle"></div>
         <button class="btn-chiudi-sheet" onclick="chiudiTuttiSheets()">✕</button>
         <h4>📍 SCEGLI REGIONE</h4>
         <div class="griglia-regioni-mobile">
-            
-        <button onclick="selezionaRegioneDaMobile('Abruzzo')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Abruzzo
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Basilicata')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Basilicata
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Calabria')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Calabria
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Campania')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Campania
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Emilia-Romagna')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Emilia-Romagna
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Friuli-Venezia-Giulia')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Friuli-Venezia Giulia
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Lazio')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Lazio
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Liguria')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Liguria
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Lombardia')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Lombardia
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Marche')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Marche
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Molise')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Molise
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Piemonte')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Piemonte
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Puglia')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Puglia
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Sardegna')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Sardegna
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Sicilia')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Sicilia
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Toscana')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Toscana
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Trentino-Alto-Adige')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Trentino-Alto Adige
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Umbria')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Umbria
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Valle-d-Aosta')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Valle d'Aosta
-        </button>
-        
-        <button onclick="selezionaRegioneDaMobile('Veneto')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">
-            Veneto
-        </button>
-        
+            <button onclick="selezionaRegioneDaMobile('Abruzzo')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Abruzzo</button><button onclick="selezionaRegioneDaMobile('Basilicata')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Basilicata</button><button onclick="selezionaRegioneDaMobile('Calabria')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Calabria</button><button onclick="selezionaRegioneDaMobile('Campania')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Campania</button><button onclick="selezionaRegioneDaMobile('Emilia-Romagna')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Emilia-Romagna</button><button onclick="selezionaRegioneDaMobile('Friuli-Venezia-Giulia')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Friuli-Venezia Giulia</button><button onclick="selezionaRegioneDaMobile('Lazio')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Lazio</button><button onclick="selezionaRegioneDaMobile('Liguria')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Liguria</button><button onclick="selezionaRegioneDaMobile('Lombardia')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Lombardia</button><button onclick="selezionaRegioneDaMobile('Marche')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Marche</button><button onclick="selezionaRegioneDaMobile('Molise')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Molise</button><button onclick="selezionaRegioneDaMobile('Piemonte')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Piemonte</button><button onclick="selezionaRegioneDaMobile('Puglia')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Puglia</button><button onclick="selezionaRegioneDaMobile('Sardegna')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Sardegna</button><button onclick="selezionaRegioneDaMobile('Sicilia')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Sicilia</button><button onclick="selezionaRegioneDaMobile('Toscana')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Toscana</button><button onclick="selezionaRegioneDaMobile('Trentino-Alto-Adige')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Trentino-Alto Adige</button><button onclick="selezionaRegioneDaMobile('Umbria')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Umbria</button><button onclick="selezionaRegioneDaMobile('Valle-d-Aosta')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Valle d'Aosta</button><button onclick="selezionaRegioneDaMobile('Veneto')" style="background:#f1f5f9; border:1px solid #cbd5e1; padding:10px 8px; border-radius:6px; font-size:12px; font-weight:bold; color:#2c3e50; cursor:pointer; text-align:center; pointer-events:auto !important; touch-action:manipulation !important;">Veneto</button>
         </div>
     </div>
 
-    <!-- PANNELLO LEGENDA MOBILE -->
     <div id="legenda-mappa-mobile">
         <div class="drag-handle"></div>
         <button class="btn-chiudi-sheet" onclick="chiudiTuttiSheets()">✕</button>
@@ -307,15 +217,7 @@ function apriSheetMobile(idSheet) {
 
 function selezionaRegioneDaMobile(idReg) {
     chiudiTuttiSheets();
-    var iframe = document.getElementById('frame');
-    if (iframe && iframe.contentWindow) {
-        iframe.contentWindow.postMessage({ tipo: 'mostraRegione', regione: idReg }, '*');
-    }
 }
-
-window.mostraRegioneDaIframe = function(idReg) {
-    // Gestione futura se necessaria
-};
 </script>
 </body>
 </html>
