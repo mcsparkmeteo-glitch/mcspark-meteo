@@ -1115,6 +1115,7 @@ z_media.to_dataset(
     name="z500_media"
 ).to_netcdf(
     NETCDF_FILE
+    engine="netcdf4"
 )
 
 
