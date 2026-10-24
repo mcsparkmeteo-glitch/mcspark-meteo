@@ -46,6 +46,8 @@ import cartopy.feature as cfeature
 from PIL import Image
 
 from ecmwf.opendata import Client
+import matplotlib
+matplotlib.use('Agg')  # Forza il salvataggio senza interfaccia grafica
 
 
 # ============================================================
