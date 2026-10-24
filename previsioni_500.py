@@ -1114,7 +1114,7 @@ NETCDF_FILE = (
 z_media.to_dataset(
     name="z500_media"
 ).to_netcdf(
-    NETCDF_FILE
+    NETCDF_FILE,
     engine="netcdf4"
 )
 
