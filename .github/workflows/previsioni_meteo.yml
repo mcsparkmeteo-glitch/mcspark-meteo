@@ -29,6 +29,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install requests numpy xarray matplotlib cartopy eccodes cfgrib ecmwf-opendata
 
+    - name: Installa dipendenze Python
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests numpy xarray matplotlib cartopy eccodes cfgrib ecmwf-opendata scipy
+        
     - name: Esegui Mappa 500 hPa
       run: |
         xvfb-run python previsioni_500.py
