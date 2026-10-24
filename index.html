@@ -1,88 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Previsioni Meteo McSpark</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <style>
-        html, body { 
-            font-family: Arial, sans-serif; 
-            text-align: center; 
-            margin: 0; 
-            padding: 0; 
-            background-color: #f8f9fa; 
-            height: 100dvh;
-            overflow: hidden;
-        }
-        .header-bar {
-            background-color: #2c3e50;
-            background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
-            background-size: 4px 4px;
-            padding: 10px 0 12px 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
-            position: relative;
-            z-index: 1000;
-        }
-        h2 { 
-            margin: 0 0 8px 0; 
-            color: #ffffff; 
-            font-size: 20px; 
-            letter-spacing: 0.5px;
-        }
-        .btn-bar { margin-bottom: 0px; }
-        button {
-            display: inline-block;
-            text-decoration: none;
-            margin: 0 4px;
-            padding: 8px 16px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            border-radius: 6px;
-            border: 1px solid #4a5d71;
-            background-color: #34495e;
-            color: #cbd5e1;
-            transition: all 0.2s ease;
-            text-align: center;
-        }
-        button:hover {
-            background-color: #415b76;
-            color: #ffffff;
-            border-color: #cbd5e1;
-        }
-        button.active {
-            background-color: #ffffff !important;
-            color: #2c3e50 !important;
-            border-color: #ffffff !important;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-        iframe { width: 100%; height: calc(100dvh - 75px); border: none; display: block; }
-
-        @media (max-width: 768px) {
-            h2 { font-size: 16px; margin-bottom: 6px; }
-            button { padding: 6px 10px; font-size: 11px; }
-            iframe { height: calc(100dvh - 65px); }
-        }
-    </style>
+    <meta http-equiv="refresh" content="0; url=day1.html">
+    <script>window.location.href = "day1.html";</script>
 </head>
 <body>
-    <div class="header-bar">
-        <h2>Previsioni Meteo McSpark</h2>
-        <div class="btn-bar">
-            <button onclick="carica('day1.html', this)" class="active">24/10/2026</button>
-            <button onclick="carica('day2.html', this)">25/10/2026</button>
-            <button onclick="carica('day3.html', this)">26/10/2026</button>
-        </div>
-    </div>
-    
-    <iframe id="frame" src="day1.html?v=1"></iframe>
-
-<script>
-function carica(file, elemento) {
-    document.getElementById('frame').src = file + '?v=' + new Date().getTime();
-    var bottoni = document.querySelectorAll('.btn-bar button');
-    bottoni.forEach(function(btn) { btn.classList.remove('active'); });
-    elemento.classList.add('active');
-}
-</script>
 </body>
 </html>
