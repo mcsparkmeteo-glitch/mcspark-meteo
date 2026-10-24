@@ -1303,7 +1303,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
     </div>
 
     <!-- PANNELLO FILTRI -->
-    # PANNELLO FILTRI AGGIORNATO CON SUGGERIMENTI COMPATIBILI FIREFOX/CHROME
+   
     <div id="pannello-meteo-pulsanti">
         <div class="sheet-handle"></div>
         <button class="btn-chiudi-sheet" onclick="chiudiTuttiSheets()">✕</button>
