@@ -31,19 +31,19 @@ jobs:
 
     - name: Esegui Mappa 500 hPa
       run: |
-        python previsioni_500.py
+        xvfb-run python previsioni_500.py
 
     - name: Esegui Mappa 850 hPa
       run: |
-        python previsioni_850.py
+        xvfb-run python previsioni_850.py
 
     - name: Esegui Mappa MSLP
       run: |
-        python previsione_mslp.py
+        xvfb-run python previsione_mslp.py
 
     - name: Esegui Mappa Precipitazioni
       run: |
-        python precipitazioni_totali.py
+        xvfb-run python precipitazioni_totali.py
 
     - name: Salva e carica le mappe generate su GitHub
       run: |
