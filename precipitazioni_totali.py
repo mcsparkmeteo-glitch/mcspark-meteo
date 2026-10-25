@@ -884,7 +884,11 @@ plt.savefig(
     bbox_inches="tight"
 )
 
-plt.show()
+# Mostra la finestra grafica SOLO in locale (salta su GitHub Actions)
+if not os.environ.get("CI"):
+    plt.show()
+
+plt.close()
 
 
 # ============================================================
