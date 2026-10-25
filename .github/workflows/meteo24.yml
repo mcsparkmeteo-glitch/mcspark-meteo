@@ -27,7 +27,7 @@ jobs:
       - name: Installa dipendenze Python
         run: |
           python -m pip install --upgrade pip
-          pip install numpy xarray scipy cfgrib matplotlib cartopy requests ecmwf-opendata Pillow
+          pip install numpy xarray scipy netcdf4 cfgrib matplotlib cartopy requests ecmwf-opendata Pillow
 
       - name: Esegui script Precipitazioni 24h
         run: python precipitazioni_24.py
