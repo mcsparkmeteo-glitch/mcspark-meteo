@@ -1270,18 +1270,17 @@ ax.text(
 
 plt.tight_layout()
 
-
 plt.savefig(
-
     OUTPUT_PNG,
-
     dpi=180,
-
     bbox_inches="tight"
 )
 
+# Mostra la finestra grafica SOLO in locale (salta su GitHub Actions)
+if not os.environ.get("CI"):
+    plt.show()
 
-plt.show()
+plt.close()
 
 
 # ============================================================
