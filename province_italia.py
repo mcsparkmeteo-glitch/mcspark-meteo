@@ -104,7 +104,8 @@ PROVINCE_BY_REGIONE = {
         {"nome": "Nuoro", "lat": 40.320, "lon": 9.326},
         {"nome": "Oristano", "lat": 39.905, "lon": 8.591},
         {"nome": "Sassari", "lat": 40.725, "lon": 8.560},
-        {"nome": "Sud Sardegna", "lat": 39.151, "lon": 8.522}
+        {"nome": "Sud Sardegna", "lat": 39.151, "lon": 8.522},
+        {"nome": "Gallura Nord-Est Sardegna", "lat": 40.9234, "lon": 9.5320},
     ],
     "Sicilia": [
         {"nome": "Palermo", "lat": 38.115, "lon": 13.361},
