@@ -443,8 +443,8 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                 url_models = (
                     f"https://api.open-meteo.com/v1/forecast?"
                     f"latitude={lat_float}&longitude={lon_float}"
-                    f"&daily=precipitation_sum,snowfall_sum,wind_speed_10m_max,wind_gusts_10m_max"
-                    f"&hourly=temperature_2m,dew_point_2m,cape,lifted_index"
+                    f"&daily=snowfall_sum,wind_speed_10m_max,wind_gusts_10m_max"
+                    f"&hourly=temperature_2m,dew_point_2m,precipitation,cape,lifted_index"
                     f"&models=gfs_seamless,icon_seamless,ecmwf_ifs025"
                     f"&timezone=Europe/Rome"
                 )
@@ -512,26 +512,22 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                         elif cape_max >= 300 or li_min <= -1.0 or ha_fulmini:
                             livello_allerta_instabilita = "giallo"
 
-                if daily_m:
-                    prec_gfs = safe_get(
-                        daily_m.get("precipitation_sum_gfs_seamless"),
-                        day_index,
-                        0.0,
-                    )
-                    prec_icon = safe_get(
-                        daily_m.get("precipitation_sum_icon_seamless"),
-                        day_index,
-                        0.0,
-                    )
-                    prec_ecmwf = safe_get(
-                        daily_m.get("precipitation_sum_ecmwf_ifs025"),
-                        day_index,
-                        0.0,
-                    )
-                    prec_media = round(
-                        (prec_gfs + prec_icon + prec_ecmwf) / 3.0, 1
-                    )
+                    # Calcolo precipitazioni sommando le 24 ore orarie per ogni modello
+                    prec_gfs = prec_icon = prec_ecmwf = 0.0
+                    arr_gfs = hourly_m.get("precipitation_gfs_seamless", [])
+                    arr_icon = hourly_m.get("precipitation_icon_seamless", [])
+                    arr_ecmwf = hourly_m.get("precipitation_ecmwf_ifs025", [])
 
+                    if arr_gfs and len(arr_gfs) >= end_h:
+                        prec_gfs = round(sum([x for x in arr_gfs[start_h:end_h] if x is not None]), 1)
+                    if arr_icon and len(arr_icon) >= end_h:
+                        prec_icon = round(sum([x for x in arr_icon[start_h:end_h] if x is not None]), 1)
+                    if arr_ecmwf and len(arr_ecmwf) >= end_h:
+                        prec_ecmwf = round(sum([x for x in arr_ecmwf[start_h:end_h] if x is not None]), 1)
+
+                    prec_media = round((prec_gfs + prec_icon + prec_ecmwf) / 3.0, 1)
+
+                if daily_m:
                     snow_gfs = safe_get(
                         daily_m.get("snowfall_sum_gfs_seamless"),
                         day_index,
@@ -741,7 +737,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                         f"{round(snow_icon, 1)} cm"
                         if (prec_icon is not None and modelli_con_neve >= 1)
                         else (
-                            round(snow_icon, 1)
+                            round(prec_icon, 1)
                             if prec_icon is not None
                             else "N/D"
                         )
@@ -750,7 +746,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
                         f"{round(snow_ecmwf, 1)} cm"
                         if (prec_ecmwf is not None and modelli_con_neve >= 1)
                         else (
-                            round(snow_ecmwf, 1)
+                            round(prec_ecmwf, 1)
                             if prec_ecmwf is not None
                             else "N/D"
                         )
@@ -1164,9 +1160,6 @@ def genera_mappa_completa(day_index: int, nome_file: str):
         /* ========================================================= */
         /* MOBILE FIRST WINDY BOTTOM SHEETS (<= 768px)               */
         /* ========================================================= */
-        /* ========================================================= */
-        /* MOBILE FIRST WINDY BOTTOM SHEETS (<= 768px)               */
-        /* ========================================================= */
         @media (max-width: 768px) {{
             #windy-header h1 {{ font-size: 14px !important; }}
             .windy-day-selector a {{ padding: 4px 8px !important; font-size: 11px !important; }}
@@ -1303,7 +1296,6 @@ def genera_mappa_completa(day_index: int, nome_file: str):
     </div>
 
     <!-- PANNELLO FILTRI -->
-   
     <div id="pannello-meteo-pulsanti">
         <div class="sheet-handle"></div>
         <button class="btn-chiudi-sheet" onclick="chiudiTuttiSheets()">✕</button>
@@ -1320,7 +1312,6 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             </label>
             <input type="text" id="cercaProvincia" placeholder="Es. Torino, Roma, Napoli..." autocomplete="off"
                    style="width: 100%; padding: 8px 12px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; outline: none; color: #1e293b; background: #f8fafc;">
-            <!-- Box suggerimenti personalizzato per Firefox/Chrome mobile -->
             <div id="boxSuggerimenti" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 8px; max-height: 150px; overflow-y: auto; z-index: 100005; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
         </div>
     </div>
