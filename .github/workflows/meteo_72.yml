@@ -1,9 +1,9 @@
-name: McSPARK METEO - Generazione Automatica Mappe
+name: McSPARK METEO - Generazione Automatica Mappe 72h
 
 on:
   schedule:
     # 06:00 UTC = 08:00 ora legale italiana / 07:00 ora solare
-    - cron: '0 6 * * *'
+    - cron: '6 6 * * *'
   workflow_dispatch: # Permette l'avvio manuale dalla scheda Actions su GitHub
 
 jobs:
@@ -18,6 +18,7 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
+        cache: 'pip'
 
     - name: Installa System Dependencies (eccodes per GRIB)
       run: |
@@ -27,13 +28,8 @@ jobs:
     - name: Installa dipendenze Python
       run: |
         python -m pip install --upgrade pip
-        pip install requests numpy xarray matplotlib cartopy eccodes cfgrib ecmwf-opendata
+        pip install requests numpy xarray matplotlib cartopy eccodes cfgrib ecmwf-opendata scipy netcdf4 Pillow
 
-    - name: Installa dipendenze Python
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests numpy xarray matplotlib cartopy eccodes cfgrib ecmwf-opendata scipy netcdf4
-        
     - name: Esegui Mappa 500 hPa
       run: |
         xvfb-run python previsioni_500.py
@@ -50,9 +46,32 @@ jobs:
       run: |
         xvfb-run python precipitazioni_totali.py
 
+    - name: Esegui Mappa Nuvolosità 72h
+      run: |
+        xvfb-run python nuvolosità_72h.py
+
+    - name: Esegui Mappa Temperature al Suolo 72h
+      run: |
+        xvfb-run python temperature_suolo_72h.py
+
+    - name: Esegui Mappa Vento 72h
+      run: |
+        xvfb-run python vento_72h.py
+
+    - name: Esegui Mappa Zero Termico 72h
+      run: |
+        xvfb-run python zero_termico_72h.py
+
+    - name: Esegui Mappa Spessore 1000-500 hPa 72h
+      run: |
+        xvfb-run python spessore_gph_1000_500_72h.py
+
     - name: Salva e carica le mappe generate su GitHub
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action Bot"
-        git add -A
-        git diff-index --quiet HEAD || (git commit -m "Auto-update mappe McSPARK METEO [skip ci]" && git pull origin main --rebase && git push)
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git pull origin main --rebase || true
+        git add .
+        git diff --cached --quiet && echo "Nessuna modifica da pushare" && exit 0
+        git commit -m "☁️ Aggiornamento automatico mappe meteo 72h [skip ci]"
+        git push
