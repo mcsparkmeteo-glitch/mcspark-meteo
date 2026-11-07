@@ -48,10 +48,10 @@ jobs:
           git diff --cached --quiet && echo "Nessuna modifica da pushare" && exit 0
 
           # 3. Salva le modifiche localmente con un commit
-          git commit -m "☁️ Aggiornamento automatico meteo"
+          git commit -m "☁️ Aggiornamento automatico meteo [skip ci]"
 
-          # 4. Sincronizza con il remote in sicurezza dopo il commit
-          git pull origin main --rebase || true
+          # 4. Sincronizza con il remote gestendo i conflitti in automatico (-X ours)
+          git pull origin main --no-rebase -X ours || true
 
           # 5. Invia tutto su GitHub
-          git push
+          git push origin main
