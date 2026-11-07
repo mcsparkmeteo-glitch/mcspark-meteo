@@ -73,8 +73,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+        
+          # Sincronizza prima di aggiungere, risolvendo eventuali conflitti a favore del nuovo
+          git pull origin main --rebase -X theirs || true
+        
           git add .
           git diff --cached --quiet && echo "Nessuna modifica da pushare" && exit 0
-          git commit -m "☁️ Aggiornamento automatico mappe meteo 24h"
-          git pull origin main --rebase || true
+          git commit -m "☁️ Aggiornamento automatico meteo"
           git push
