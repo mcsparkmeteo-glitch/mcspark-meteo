@@ -1,2 +1,2 @@
-# mcspark-meteo
-mappe radar
+# McSpark Meteo
+Previsioni meteo automatiche
