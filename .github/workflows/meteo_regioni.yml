@@ -37,16 +37,21 @@ jobs:
         run: python meteo.py
 
       - name: Commit e push modifiche
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Sincronizza eventuali modifiche remote prima del commit per evitare conflitti
-          git pull origin main --rebase || true
+        # 1. Aggiunge tutte le modifiche (immagini, dati e html)
+        git add .
 
-          git add index.html day1.html day2.html day3.html
+        # 2. Se non ci sono variazioni, interrompe l'azione senza errori
+        git diff --cached --quiet && echo "Nessuna modifica da pushare" && exit 0
 
-          git diff --cached --quiet && echo "Nessuna modifica da pushare" && exit 0
+        # 3. Salva le modifiche localmente con un commit
+        git commit -m "☁️ Aggiornamento automatico meteo"
 
-          git commit -m "🌤 Aggiornamento automatico meteo"
-          git push
+        # 4. Sincronizza con il remote in sicurezza dopo il commit
+        git pull origin main --rebase || true
+
+        # 5. Invia tutto su GitHub
+        git push
