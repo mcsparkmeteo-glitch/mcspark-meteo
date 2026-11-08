@@ -1,10 +1,11 @@
 name: McSPARK METEO - Generazione Automatica Mappe 72h
 
 on:
-  schedule:
-    # 06:00 UTC = 08:00 ora legale italiana / 07:00 ora solare
-    - cron: '6 6 * * *'
-  workflow_dispatch: # Permette l'avvio manuale dalla scheda Actions su GitHub
+  push:
+    branches: [main]
+  repository_dispatch:
+    types: [trigger_meteo_72h]
+  workflow_dispatch:
 
 jobs:
   run-meteo-suite:
