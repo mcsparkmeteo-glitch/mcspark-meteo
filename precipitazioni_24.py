@@ -835,7 +835,7 @@ valid_text = valid_time.strftime(
 
 ax.set_title(
     "McSPARK METEO - Precipitazioni cumulate a 24 ore\n"
-    "Media multimodello ECMWF IFS + GFS | +2 giorni",
+    "Media multimodello ECMWF IFS + GFS | ",
     fontsize=13,
     fontweight="bold",
     pad=15
