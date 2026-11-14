@@ -40,7 +40,7 @@ jobs:
           CI: "true"
 
       - name: Esegui script Temperature al Suolo
-        run: python temperature_suolo.py
+        run: python temperature_suolo_24h.py
         env:
           CI: "true"
 
