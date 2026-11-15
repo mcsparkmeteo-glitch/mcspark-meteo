@@ -6,7 +6,7 @@
 # Confronto multimodello:
 # - stessa validità
 # - preferibilmente stesso ciclo di inizializzazione
-# - lead time ECMWF = +24 h
+# - lead time ECMWF = +36 h (ore 12:00 UTC del giorno dopo)
 #
 # Il GFS viene cercato automaticamente.
 # Se il medesimo ciclo ECMWF non è disponibile su NOMADS,
@@ -39,8 +39,8 @@ from ecmwf.opendata import Client
 # CONFIGURAZIONE
 # ============================================================
 
-# Lead time ECMWF
-LEAD_HOURS_ECMWF = 24
+# Lead time ECMWF impostato a 36 ore (ore 12:00 del giorno dopo)
+LEAD_HOURS_ECMWF = 36
 
 # Area Italia
 LON_MIN = 6
@@ -52,22 +52,22 @@ LAT_MAX = 48
 OUT_DIR = "mslp_multimodello"
 os.makedirs(OUT_DIR, exist_ok=True)
 
-# File ECMWF
+# File ECMWF aggiornati a 36h
 ECMWF_FILE = os.path.join(
     OUT_DIR,
-    "ecmwf_msl_24h.grib2"
+    "ecmwf_msl_36h.grib2"
 )
 
-# File GFS
+# File GFS aggiornati a 36h
 GFS_FILE = os.path.join(
     OUT_DIR,
-    "gfs_prmsl.grib2"
+    "gfs_prmsl_36h.grib2"
 )
 
 # Output
 OUTPUT_PNG = os.path.join(
     OUT_DIR,
-    "mslp_24h_ECMWF_GFS.png"
+    "mslp_36h_ECMWF_GFS.png"
 )
 
 
@@ -189,7 +189,7 @@ print("==============================================")
 client = Client(source="ecmwf")
 
 print(
-    "Richiedo ultima corsa ECMWF disponibile..."
+    "Richiedo ultima corsa ECMWF disponibile (+36h)..."
 )
 
 try:
@@ -278,21 +278,7 @@ GFS_CYCLES = [0, 6, 12, 18]
 
 # ------------------------------------------------------------
 # Costruiamo i candidati GFS.
-#
-# Prima proviamo lo stesso ciclo dell'ECMWF.
-# Poi procediamo a ritroso:
-#
-# ECMWF 06 UTC:
-#   GFS 06
-#   GFS 00
-#   GFS 18 del giorno precedente
-#   GFS 12 del giorno precedente
-#
-# In questo modo non utilizziamo mai un run GFS
-# successivo al run ECMWF.
 # ------------------------------------------------------------
-
-ecmwf_cycle = ecmwf_run_datetime.hour
 
 candidate_runs = []
 
@@ -305,7 +291,6 @@ for hours_back in range(0, 25, 6):
 
     candidate_cycle = candidate_time.hour
 
-    # Consideriamo soltanto i normali cicli GFS
     if candidate_cycle in GFS_CYCLES:
 
         candidate_runs.append(
@@ -317,7 +302,6 @@ for hours_back in range(0, 25, 6):
         )
 
 
-# Eliminiamo eventuali duplicati
 candidate_runs = list(
     dict.fromkeys(candidate_runs)
 )
@@ -353,30 +337,17 @@ RETRY_DELAY = 10
 
 for candidate_run in candidate_runs:
 
-    # --------------------------------------------------------
-    # Calcolo del lead time necessario per arrivare
-    # alla STESSA validità ECMWF
-    # --------------------------------------------------------
-
     candidate_lead = (
         valid_time - candidate_run
     ).total_seconds() / 3600
 
     candidate_lead = int(round(candidate_lead))
 
-
-    # Non accettiamo lead negativi
     if candidate_lead < 0:
-
         continue
 
-
-    # GFS operativo usa step interi
-    # e la richiesta deve essere coerente.
     if candidate_lead > 384:
-
         continue
-
 
     gfs_date = candidate_run.strftime(
         "%Y%m%d"
@@ -386,21 +357,11 @@ for candidate_run in candidate_runs:
         "%H"
     )
 
-
-    # --------------------------------------------------------
-    # Nome file GFS
-    # --------------------------------------------------------
-
     file_name = (
         f"gfs.t{gfs_cycle}z."
         f"pgrb2.0p25."
         f"f{candidate_lead:03d}"
     )
-
-
-    # --------------------------------------------------------
-    # Parametri NOMADS
-    # --------------------------------------------------------
 
     params = {
 
@@ -411,15 +372,12 @@ for candidate_run in candidate_runs:
         "file":
             file_name,
 
-        # Pressione ridotta al livello del mare
         "var_PRMSL":
             "on",
 
-        # PARAMETRO CORRETTO NOMADS
         "lev_mean_sea_level":
             "on",
 
-        # Area geografica richiesta
         "leftlon":
             str(LON_MIN),
 
@@ -433,53 +391,23 @@ for candidate_run in candidate_runs:
             str(LAT_MIN)
     }
 
-
     gfs_url = (
         base_url
         + "?"
         + urlencode(params)
     )
 
-
-    # --------------------------------------------------------
-    # Informazioni a video
-    # --------------------------------------------------------
-
     print("\n----------------------------------------------")
-
-    print(
-        "Provo run GFS:"
-    )
-
-    print(
-        f"  {candidate_run.strftime('%Y-%m-%d %H UTC')}"
-    )
-
-    print(
-        f"Lead GFS necessario: "
-        f"+{candidate_lead} h"
-    )
-
-    print(
-        f"File: {file_name}"
-    )
-
-
-    # ========================================================
-    # TENTATIVI DI DOWNLOAD
-    # ========================================================
+    print("Provo run GFS:")
+    print(f"  {candidate_run.strftime('%Y-%m-%d %H UTC')}")
+    print(f"Lead GFS necessario: +{candidate_lead} h")
+    print(f"File: {file_name}")
 
     run_success = False
 
-    for attempt in range(
-        1,
-        MAX_RETRIES + 1
-    ):
+    for attempt in range(1, MAX_RETRIES + 1):
 
-        print(
-            f"Tentativo "
-            f"{attempt}/{MAX_RETRIES}..."
-        )
+        print(f"Tentativo {attempt}/{MAX_RETRIES}...")
 
         try:
 
@@ -488,164 +416,44 @@ for candidate_run in candidate_runs:
                 timeout=120
             )
 
-
-            # ------------------------------------------------
-            # Controllo HTTP
-            # ------------------------------------------------
-
             response.raise_for_status()
-
-
             content = response.content
 
-
-            # ------------------------------------------------
-            # Controllo dimensione
-            # ------------------------------------------------
-
             if len(content) < 5000:
-
-                print(
-                    "Risposta troppo piccola."
-                )
-
+                print("Risposta troppo piccola.")
                 if attempt < MAX_RETRIES:
-
-                    print(
-                        f"Attendo "
-                        f"{RETRY_DELAY} secondi..."
-                    )
-
-                    time.sleep(
-                        RETRY_DELAY
-                    )
-
+                    time.sleep(RETRY_DELAY)
                 continue
 
-
-            # ------------------------------------------------
-            # Controllo che sia realmente GRIB
-            # ------------------------------------------------
-
-            if not content.startswith(
-                b"GRIB"
-            ):
-
-                print(
-                    "La risposta ricevuta "
-                    "non sembra essere un "
-                    "file GRIB valido."
-                )
-
+            if not content.startswith(b"GRIB"):
+                print("La risposta ricevuta non sembra un file GRIB valido.")
                 if attempt < MAX_RETRIES:
-
-                    print(
-                        f"Attendo "
-                        f"{RETRY_DELAY} secondi..."
-                    )
-
-                    time.sleep(
-                        RETRY_DELAY
-                    )
-
+                    time.sleep(RETRY_DELAY)
                 continue
 
-
-            # ------------------------------------------------
-            # Salvataggio
-            # ------------------------------------------------
-
-            with open(
-                GFS_FILE,
-                "wb"
-            ) as f:
-
+            with open(GFS_FILE, "wb") as f:
                 f.write(content)
 
-
-            print(
-                "\nGFS scaricato con successo."
-            )
-
-            print(
-                f"Dimensione: "
-                f"{len(content) / 1024 / 1024:.2f} MB"
-            )
-
-
-            # ------------------------------------------------
-            # Memorizziamo il run utilizzato
-            # ------------------------------------------------
+            print("\nGFS scaricato con successo.")
+            print(f"Dimensione: {len(content) / 1024 / 1024:.2f} MB")
 
             gfs_run = candidate_run
-
             gfs_lead_hours = candidate_lead
-
             gfs_valid_time = (
                 gfs_run
-                + timedelta(
-                    hours=gfs_lead_hours
-                )
+                + timedelta(hours=gfs_lead_hours)
             )
-
 
             success = True
             run_success = True
-
             break
-
-
-        except requests.exceptions.HTTPError as e:
-
-            print(
-                f"Errore HTTP NOMADS: {e}"
-            )
-
-            if attempt < MAX_RETRIES:
-
-                print(
-                    f"Attendo "
-                    f"{RETRY_DELAY} secondi..."
-                )
-
-                time.sleep(
-                    RETRY_DELAY
-                )
-
-
-        except requests.exceptions.RequestException as e:
-
-            print(
-                f"Errore di connessione: {e}"
-            )
-
-            if attempt < MAX_RETRIES:
-
-                print(
-                    f"Attendo "
-                    f"{RETRY_DELAY} secondi..."
-                )
-
-                time.sleep(
-                    RETRY_DELAY
-                )
-
 
         except Exception as e:
-
-            print(
-                f"Errore inatteso: {e}"
-            )
-
-            break
-
-
-    # --------------------------------------------------------
-    # Se abbiamo trovato un run valido, usciamo dal ciclo
-    # --------------------------------------------------------
+            print(f"Errore durante il download: {e}")
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_DELAY)
 
     if run_success:
-
         break
 
 
@@ -654,16 +462,7 @@ for candidate_run in candidate_runs:
 # ============================================================
 
 if not success:
-
-    print("\n==============================================")
-    print(" ERRORE CRITICO GFS")
-    print("==============================================")
-
-    print(
-        "Nessun run GFS valido è stato "
-        "scaricato da NOMADS."
-    )
-
+    print("\nERRORE CRITICO GFS: Nessun run GFS valido trovato.")
     sys.exit(1)
 
 
@@ -671,656 +470,125 @@ if not success:
 # VERIFICA DELLA VALIDITÀ
 # ============================================================
 
-print("\n==============================================")
-print(" GFS ACQUISITO")
-print("==============================================")
-
-print(
-    f"Run GFS   : "
-    f"{gfs_run.strftime('%Y-%m-%d %H:%M UTC')}"
-)
-
-print(
-    f"Validità  : "
-    f"{gfs_valid_time.strftime('%Y-%m-%d %H:%M UTC')}"
-)
-
-print(
-    f"Lead time : "
-    f"+{gfs_lead_hours} h"
-)
-
-
-# ------------------------------------------------------------
-# Controllo fondamentale:
-# ECMWF e GFS devono avere la stessa validità
-# ------------------------------------------------------------
-
 if gfs_valid_time != valid_time:
-
-    print(
-        "\nERRORE: ECMWF e GFS non hanno "
-        "la stessa validità."
-    )
-
-    print(
-        f"ECMWF: {valid_time}"
-    )
-
-    print(
-        f"GFS  : {gfs_valid_time}"
-    )
-
+    print(f"\nERRORE: ECMWF ({valid_time}) e GFS ({gfs_valid_time}) non hanno la stessa validità.")
     sys.exit(1)
 
-
-print(
-    "\nOK: ECMWF e GFS hanno "
-    "la stessa identica validità."
-)
+print("\nOK: ECMWF e GFS hanno la stessa identica validità.")
 
 
 # ============================================================
-# 3. LETTURA ECMWF
+# 3. LETTURA DATI E CALCOLO MEDIA
 # ============================================================
 
 print("\n==============================================")
-print(" LETTURA DATI ECMWF")
+print(" LETTURA ED ELABORAZIONE DATI")
 print("==============================================")
 
-
-try:
-
-    ds_ecmwf = xr.open_dataset(
-        ECMWF_FILE,
-        engine="cfgrib"
-    )
-
-except Exception as e:
-
-    print(
-        "\nErrore lettura ECMWF:"
-    )
-
-    print(e)
-
-    sys.exit(1)
-
-
-# ------------------------------------------------------------
-# Controllo variabile
-# ------------------------------------------------------------
-
-if "msl" not in ds_ecmwf:
-
-    print(
-        "\nERRORE: variabile "
-        "'msl' non trovata nel GRIB ECMWF."
-    )
-
-    print(
-        "Variabili disponibili:"
-    )
-
-    print(
-        list(ds_ecmwf.data_vars)
-    )
-
-    sys.exit(1)
-
-
-msl_ecmwf = ds_ecmwf["msl"]
-
-
-# ------------------------------------------------------------
-# Conversione Pa → hPa
-# ------------------------------------------------------------
-
-msl_ecmwf_hpa = (
-    msl_ecmwf / 100.0
-)
-
+ds_ecmwf = xr.open_dataset(ECMWF_FILE, engine="cfgrib")
+msl_ecmwf_hpa = ds_ecmwf["msl"] / 100.0
 msl_ecmwf_hpa.name = "mslp"
 
-
-# ============================================================
-# 4. LETTURA GFS
-# ============================================================
-
-print("\n==============================================")
-print(" LETTURA DATI GFS")
-print("==============================================")
-
-
-try:
-
-    ds_gfs = xr.open_dataset(
-        GFS_FILE,
-        engine="cfgrib"
-    )
-
-except Exception as e:
-
-    print(
-        "\nErrore lettura GFS:"
-    )
-
-    print(e)
-
-    sys.exit(1)
-
-
-# ------------------------------------------------------------
-# Individuazione variabile PRMSL
-# ------------------------------------------------------------
-
-gfs_var = None
-
-
-if "prmsl" in ds_gfs.data_vars:
-
-    gfs_var = "prmsl"
-
-elif "msl" in ds_gfs.data_vars:
-
-    gfs_var = "msl"
-
-elif "unknown" in ds_gfs.data_vars:
-
-    gfs_var = "unknown"
-
-
-if gfs_var is None:
-
-    print(
-        "\nERRORE: non riesco a individuare "
-        "la pressione al livello del mare nel GFS."
-    )
-
-    print(
-        "Variabili disponibili:"
-    )
-
-    print(
-        list(ds_gfs.data_vars)
-    )
-
-    sys.exit(1)
-
-
-print(
-    f"Variabile GFS utilizzata: {gfs_var}"
-)
-
-
+ds_gfs = xr.open_dataset(GFS_FILE, engine="cfgrib")
+gfs_var = "prmsl" if "prmsl" in ds_gfs.data_vars else ("msl" if "msl" in ds_gfs.data_vars else "unknown")
 msl_gfs = ds_gfs[gfs_var]
 
-
-# ------------------------------------------------------------
-# Conversione Pa → hPa
-# ------------------------------------------------------------
-
-units_gfs = str(
-    msl_gfs.attrs.get(
-        "units",
-        ""
-    )
-).lower()
-
-
-if (
-    "pa" in units_gfs
-    and "hpa" not in units_gfs
-):
-
-    msl_gfs_hpa = (
-        msl_gfs / 100.0
-    )
-
-else:
-
-    msl_gfs_hpa = msl_gfs
-
-
+units_gfs = str(msl_gfs.attrs.get("units", "")).lower()
+msl_gfs_hpa = (msl_gfs / 100.0) if ("pa" in units_gfs and "hpa" not in units_gfs) else msl_gfs
 msl_gfs_hpa.name = "mslp"
 
+msl_ecmwf_hpa = normalize_longitude(msl_ecmwf_hpa)
+msl_gfs_hpa = normalize_longitude(msl_gfs_hpa)
 
-# ============================================================
-# 5. NORMALIZZAZIONE E CLIP
-# ============================================================
+msl_ecmwf_hpa = clip_area(msl_ecmwf_hpa)
+msl_gfs_hpa = clip_area(msl_gfs_hpa)
 
-print("\n==============================================")
-print(" NORMALIZZAZIONE GRIGLIE")
-print("==============================================")
+lat_ecmwf, lon_ecmwf = get_lat_lon(msl_ecmwf_hpa)
+lat_gfs, lon_gfs = get_lat_lon(msl_gfs_hpa)
 
-
-msl_ecmwf_hpa = normalize_longitude(
-    msl_ecmwf_hpa
+msl_gfs_interp = msl_gfs_hpa.interp(
+    {
+        lat_gfs: msl_ecmwf_hpa[lat_ecmwf],
+        lon_gfs: msl_ecmwf_hpa[lon_ecmwf]
+    },
+    method="linear"
 )
 
-msl_gfs_hpa = normalize_longitude(
-    msl_gfs_hpa
-)
-
-
-msl_ecmwf_hpa = clip_area(
-    msl_ecmwf_hpa
-)
-
-msl_gfs_hpa = clip_area(
-    msl_gfs_hpa
-)
+msl_mean = (msl_ecmwf_hpa + msl_gfs_interp) / 2.0
+msl_mean.name = "multimodel_mslp"
 
 
 # ============================================================
-# 6. INTERPOLAZIONE E MEDIA MULTIMODELLO
+# 7. MAPPA MSLP (Aggiornata a ore 12:00)
 # ============================================================
 
-print("\n==============================================")
-print(" INTERPOLAZIONE E MEDIA MULTIMODELLO")
-print("==============================================")
+fig = plt.figure(figsize=(12, 10))
+ax = plt.axes(projection=ccrs.PlateCarree())
+ax.set_extent([LON_MIN, LON_MAX, LAT_MIN, LAT_MAX], crs=ccrs.PlateCarree())
 
+levels_fill = np.arange(990, 1045, 2)
+levels_contour = np.arange(990, 1045, 4)
+cmap = plt.get_cmap("YlGnBu_r", len(levels_fill) - 1)
 
-lat_ecmwf, lon_ecmwf = (
-    get_lat_lon(
-        msl_ecmwf_hpa
-    )
-)
-
-
-lat_gfs, lon_gfs = (
-    get_lat_lon(
-        msl_gfs_hpa
-    )
-)
-
-
-print(
-    "Interpolo il GFS sulla griglia ECMWF..."
-)
-
-
-msl_gfs_interp = (
-    msl_gfs_hpa.interp(
-        {
-            lat_gfs:
-                msl_ecmwf_hpa[lat_ecmwf],
-
-            lon_gfs:
-                msl_ecmwf_hpa[lon_ecmwf]
-        },
-
-        method="linear"
-    )
-)
-
-
-# ------------------------------------------------------------
-# Media ECMWF + GFS
-# ------------------------------------------------------------
-
-msl_mean = (
-    msl_ecmwf_hpa
-    + msl_gfs_interp
-) / 2.0
-
-
-msl_mean.name = (
-    "multimodel_mslp"
-)
-
-
-print(
-    "Media multimodello calcolata."
-)
-
-
-# ============================================================
-# 7. MAPPA MSLP
-# ============================================================
-
-print("\n==============================================")
-print(" CREAZIONE MAPPA MSLP")
-print("==============================================")
-
-
-fig = plt.figure(
-    figsize=(12, 10)
-)
-
-
-ax = plt.axes(
-    projection=ccrs.PlateCarree()
-)
-
-
-ax.set_extent(
-    [
-        LON_MIN,
-        LON_MAX,
-        LAT_MIN,
-        LAT_MAX
-    ],
-    crs=ccrs.PlateCarree()
-)
-
-
-# ------------------------------------------------------------
-# Livelli pressione
-# ------------------------------------------------------------
-
-levels_fill = np.arange(
-    990,
-    1045,
-    2
-)
-
-
-levels_contour = np.arange(
-    990,
-    1045,
-    4
-)
-
-
-# ------------------------------------------------------------
-# Palette
-# ------------------------------------------------------------
-
-cmap = plt.get_cmap(
-    "YlGnBu_r",
-    len(levels_fill) - 1
-)
-
-
-lon = (
-    msl_ecmwf_hpa[
-        lon_ecmwf
-    ]
-)
-
-
-lat = (
-    msl_ecmwf_hpa[
-        lat_ecmwf
-    ]
-)
-
-
-# ============================================================
-# RIEMPIMENTO
-# ============================================================
+lon = msl_ecmwf_hpa[lon_ecmwf]
+lat = msl_ecmwf_hpa[lat_ecmwf]
 
 mesh = ax.contourf(
-
-    lon,
-    lat,
-    msl_mean,
-
-    levels=levels_fill,
-
-    cmap=cmap,
-
-    extend="both",
-
-    transform=ccrs.PlateCarree(),
-
-    alpha=0.75
+    lon, lat, msl_mean,
+    levels=levels_fill, cmap=cmap, extend="both",
+    transform=ccrs.PlateCarree(), alpha=0.75
 )
-
-
-# ============================================================
-# ISOBARE
-# ============================================================
 
 contours = ax.contour(
-
-    lon,
-    lat,
-    msl_mean,
-
-    levels=levels_contour,
-
-    colors="darkblue",
-
-    linewidths=0.9,
-
+    lon, lat, msl_mean,
+    levels=levels_contour, colors="darkblue", linewidths=0.9,
     transform=ccrs.PlateCarree()
 )
+ax.clabel(contours, inline=True, fmt="%d hPa", fontsize=8)
 
+ax.add_feature(cfeature.COASTLINE, linewidth=1.0)
+ax.add_feature(cfeature.BORDERS, linewidth=0.7)
+ax.add_feature(cfeature.LAKES, alpha=0.3)
+ax.add_feature(cfeature.RIVERS, alpha=0.3)
 
-ax.clabel(
-
-    contours,
-
-    inline=True,
-
-    fmt="%d hPa",
-
-    fontsize=8
-)
-
-
-# ============================================================
-# 8. GEOGRAFIA
-# ============================================================
-
-ax.add_feature(
-    cfeature.COASTLINE,
-    linewidth=1.0
-)
-
-
-ax.add_feature(
-    cfeature.BORDERS,
-    linewidth=0.7
-)
-
-
-ax.add_feature(
-    cfeature.LAKES,
-    alpha=0.3
-)
-
-
-ax.add_feature(
-    cfeature.RIVERS,
-    alpha=0.3
-)
-
-
-# ============================================================
-# GRIGLIA
-# ============================================================
-
-gl = ax.gridlines(
-
-    draw_labels=True,
-
-    linewidth=0.4,
-
-    alpha=0.4,
-
-    linestyle="--"
-)
-
-
+gl = ax.gridlines(draw_labels=True, linewidth=0.4, alpha=0.4, linestyle="--")
 gl.top_labels = False
 gl.right_labels = False
 
+cbar = plt.colorbar(mesh, ax=ax, orientation="vertical", pad=0.02, shrink=0.85)
+cbar.set_label("Pressione al Livello del Mare - MSLP (hPa)", fontsize=11)
 
-# ============================================================
-# 9. COLORBAR
-# ============================================================
-
-cbar = plt.colorbar(
-
-    mesh,
-
-    ax=ax,
-
-    orientation="vertical",
-
-    pad=0.02,
-
-    shrink=0.85
-)
-
-
-cbar.set_label(
-
-    "Pressione al Livello del Mare - MSLP (hPa)",
-
-    fontsize=11
-)
-
-
-# ============================================================
-# 10. TESTI
-# ============================================================
-
-run_ecmwf_text = (
-    ecmwf_run_datetime.strftime(
-        "%d/%m/%Y %H UTC"
-    )
-)
-
-
-run_gfs_text = (
-    gfs_run.strftime(
-        "%d/%m/%Y %H UTC"
-    )
-)
-
-
-valid_text = (
-    valid_time.strftime(
-        "%d/%m/%Y %H UTC"
-    )
-)
-
-
-# ------------------------------------------------------------
-# Titolo
-# ------------------------------------------------------------
+run_ecmwf_text = ecmwf_run_datetime.strftime("%d/%m/%Y %H UTC")
+run_gfs_text = gfs_run.strftime("%d/%m/%Y %H UTC")
+valid_text = valid_time.strftime("%d/%m/%Y %H UTC")
 
 ax.set_title(
-
-    "McSpark Meteo PRESSIONE AL LIVELLO DEL MARE (MSLP) - 24 ORE\n"
+    "McSpark Meteo PRESSIONE AL LIVELLO DEL MARE (MSLP) - ORE 12:00 UTC\n"
     "Media multimodello ECMWF IFS + GFS",
-
-    fontsize=15,
-
-    fontweight="bold",
-
-    pad=25
+    fontsize=15, fontweight="bold", pad=25
 )
-
-
-# ------------------------------------------------------------
-# Informazioni sui run
-# ------------------------------------------------------------
 
 ax.text(
-
-    0.5,
-
-    1.02,
-
-    f"ECMWF: {run_ecmwf_text}   |   "
-    f"GFS: {run_gfs_text}   |   "
-    f"Validità: {valid_text}",
-
-    transform=ax.transAxes,
-
-    ha="center",
-
-    va="bottom",
-
-    fontsize=9.5
+    0.5, 1.02,
+    f"ECMWF: {run_ecmwf_text}   |   GFS: {run_gfs_text}   |   Validità: {valid_text}",
+    transform=ax.transAxes, ha="center", va="bottom", fontsize=9.5
 )
-
-
-# ------------------------------------------------------------
-# Informazione lead time
-# ------------------------------------------------------------
 
 ax.text(
-
-    0.5,
-
-    -0.055,
-
-    f"Lead ECMWF: +{LEAD_HOURS_ECMWF} h   |   "
-    f"Lead GFS: +{gfs_lead_hours} h",
-
-    transform=ax.transAxes,
-
-    ha="center",
-
-    va="top",
-
-    fontsize=9
+    0.5, -0.055,
+    f"Lead ECMWF: +{LEAD_HOURS_ECMWF} h   |   Lead GFS: +{gfs_lead_hours} h",
+    transform=ax.transAxes, ha="center", va="top", fontsize=9
 )
-
-
-# ============================================================
-# 11. SALVATAGGIO
-# ============================================================
 
 plt.tight_layout()
+plt.savefig(OUTPUT_PNG, dpi=180, bbox_inches="tight")
 
-plt.savefig(
-    OUTPUT_PNG,
-    dpi=180,
-    bbox_inches="tight"
-)
-
-# Mostra la finestra grafica SOLO in locale (salta su GitHub Actions)
 if not os.environ.get("CI"):
     plt.show()
 
 plt.close()
 
-
-# ============================================================
-# 12. FINE
-# ============================================================
-
 print("\n==============================================")
-print(" ELABORAZIONE MSLP COMPLETATA")
+print(" ELABORAZIONE MSLP (36H) COMPLETATA")
 print("==============================================")
-
-
-print(
-    f"Run ECMWF : "
-    f"{ecmwf_run_datetime.strftime('%Y-%m-%d %H UTC')}"
-)
-
-
-print(
-    f"Run GFS   : "
-    f"{gfs_run.strftime('%Y-%m-%d %H UTC')}"
-)
-
-
-print(
-    f"Validità  : "
-    f"{valid_time.strftime('%Y-%m-%d %H UTC')}"
-)
-
-
-print(
-    f"Lead ECMWF: +{LEAD_HOURS_ECMWF} h"
-)
-
-
-print(
-    f"Lead GFS  : +{gfs_lead_hours} h"
-)
-
-
-print(
-    f"Mappa salvata in: "
-    f"{OUTPUT_PNG}"
-)
+print(f"Mappa salvata in: {OUTPUT_PNG}")
