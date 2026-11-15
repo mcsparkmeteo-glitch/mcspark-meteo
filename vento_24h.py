@@ -2,7 +2,7 @@
 # McSPARK METEO
 #
 # MEDIA MULTIMODELLO ECMWF + GFS
-# Vento al Suolo (Area Euro-Atlantica) in km/h - Previsione +24h (Domani)
+# Vento al Suolo (Area Euro-Atlantica) in km/h - Previsione +36h (ore 12:00)
 # ============================================================
 
 import os
@@ -27,7 +27,7 @@ matplotlib.use('Agg')  # Forza il salvataggio senza interfaccia grafica
 # CONFIGURAZIONE (AREA EURO-ATLANTICA)
 # ============================================================
 
-LEAD_HOURS = 24
+LEAD_HOURS = 36  # Spostato a 36 ore per arrivare alle 12:00 UTC del giorno successivo
 
 LON_MIN = -25.0
 LON_MAX = 40.0
@@ -42,8 +42,8 @@ DATA_DIR.mkdir(exist_ok=True)
 
 LOGO_FILE = BASE_DIR / "logo.jpg"
 
-ECMWF_FILE = DATA_DIR / "ecmwf_vento_24h.grib2"
-GFS_FILE = DATA_DIR / "gfs_vento_24h.grib2"
+ECMWF_FILE = DATA_DIR / "ecmwf_vento_36h.grib2"
+GFS_FILE = DATA_DIR / "gfs_vento_36h.grib2"
 
 OUTPUT_FILE = (
     BASE_DIR /
@@ -70,7 +70,7 @@ def controlla_file(path):
 # ============================================================
 
 now_utc = dt.datetime.now(dt.timezone.utc)
-messaggio("RICERCA RUN ECMWF PIÙ RECENTE - VENTO (km/h) +24h")
+messaggio(f"RICERCA RUN ECMWF PIÙ RECENTE - VENTO (km/h) +{LEAD_HOURS}h")
 
 ecmwf_client = Client(
     source="ecmwf",
@@ -240,7 +240,7 @@ valid_text = valid_time.strftime("%d/%m/%Y %H:%M UTC")
 # 4. PLOTTING MAPPA EURO-ATLANTICA
 # ============================================================
 
-messaggio("CREAZIONE MAPPA VENTO EURO-ATLANTICO (+24H)")
+messaggio(f"CREAZIONE MAPPA VENTO EURO-ATLANTICO (+{LEAD_HOURS}H)")
 
 fig = plt.figure(figsize=(15, 9))
 ax = plt.axes(projection=ccrs.PlateCarree())
@@ -255,7 +255,7 @@ contour_fill = ax.contourf(
 )
 
 cbar = plt.colorbar(contour_fill, orientation="horizontal", pad=0.04, shrink=0.65)
-cbar.set_label("Intensità Vento a 10m (km/h) - Previsione +24h", fontsize=10, fontweight="bold")
+cbar.set_label(f"Intensità Vento a 10m (km/h) - Previsione +{LEAD_HOURS}h", fontsize=10, fontweight="bold")
 cbar.ax.tick_params(labelsize=9)
 
 contours = ax.contour(
@@ -275,7 +275,7 @@ gl.right_labels = False
 
 plt.title(
     "McSPARK METEO – Vento al Suolo (Euro-Atlantico)\n"
-    f"Media multimodello ECMWF + GFS | +24h (Domani)\n"
+    f"Media multimodello ECMWF + GFS | +{LEAD_HOURS} ore (ore 12:00 UTC)\n"
     f"Validità: {valid_text}",
     fontsize=14, fontweight="bold", pad=15
 )
@@ -286,7 +286,7 @@ fig.text(
     ha="center", fontsize=9
 )
 
-TEMP_FILE = DATA_DIR / "mappa_vento_24h_temp.png"
+TEMP_FILE = DATA_DIR / "mappa_vento_36h_temp.png"
 plt.savefig(TEMP_FILE, dpi=300, bbox_inches="tight", pad_inches=0.3, facecolor="white")
 plt.close()
 
@@ -314,5 +314,5 @@ NETCDF_FILE = DATA_DIR / f"media_ECMWF_GFS_Vento_kmh_+{LEAD_HOURS}h.nc"
 wind_media.to_dataset(name="vento_media").to_netcdf(NETCDF_FILE, engine="netcdf4")
 
 messaggio("OPERAZIONE COMPLETATA")
-print("Mappa Vento 24h Euro-Atlantico:", OUTPUT_FILE)
+print("Mappa Vento 36h Euro-Atlantico:", OUTPUT_FILE)
 print("Dati numerici NetCDF:", NETCDF_FILE)
