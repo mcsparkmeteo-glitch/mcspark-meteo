@@ -1,7 +1,7 @@
 # ============================================================
 # McSPARK METEO - FOCUS ITALIA
 # MEDIA MULTIMODELLO ECMWF + GFS
-# Zero Termico (Quota Isoterma 0 °C) - Previsione +24h
+# Zero Termico (Quota Isoterma 0 °C) - Target fisso ore 12:00 UTC
 # ============================================================
 
 import os
@@ -26,8 +26,6 @@ matplotlib.use('Agg')  # Forza il salvataggio senza interfaccia grafica
 # CONFIGURAZIONE (AREA ITALIA)
 # ============================================================
 
-LEAD_HOURS = 24
-
 # Restringiamo l'area geografica focalizzandoci sull'Italia
 LON_MIN = 6.0
 LON_MAX = 19.0
@@ -43,10 +41,8 @@ DATA_DIR.mkdir(exist_ok=True)
 LOGO_FILE = BASE_DIR / "logo.jpg"
 MAX_GFS_ATTEMPTS = 8
 
-# File di output e temporanei
-OUTPUT_FILE = BASE_DIR / "zero_termico_italia_24h.png"
-ECMWF_FILE = DATA_DIR / "ecmwf_pl_24h.grib2"
-GFS_FILE = DATA_DIR / "gfs_zero_24h.grib2"
+# File di output
+OUTPUT_FILE = BASE_DIR / "zero_termico_italia_12utc.png"
 
 def messaggio(testo):
     print()
@@ -58,7 +54,7 @@ def controlla_file(path):
     return path.exists() and path.stat().st_size >= 1000
 
 # ============================================================
-# 1. DATA/ORA UTC E DOWNLOAD ECMWF (LIVELLI DI PRESSIONE)
+# 1. INDIVIDUAZIONE RUN ECMWF E CALCOLO LEAD TIME PER LE 12:00 UTC
 # ============================================================
 
 now_utc = dt.datetime.now(dt.timezone.utc)
@@ -70,13 +66,43 @@ ecmwf_client = Client(
     resol=ECMWF_RESOLUTION
 )
 
+# Test preliminare a step 24 per ricavare la data/ora esatta del run disponibile
+TEMP_ECMWF_TEST = DATA_DIR / "ecmwf_test_zero.grib2"
+try:
+    ecmwf_result_test = ecmwf_client.retrieve(
+        type="fc",
+        step=24,
+        levtype="pl",
+        levelist=[850],
+        param=["t"],
+        target=str(TEMP_ECMWF_TEST)
+    )
+except Exception as e:
+    print("ERRORE DURANTE IL DOWNLOAD ECMWF DI TEST:", e)
+    sys.exit(1)
+
+ecmwf_run_datetime = ecmwf_result_test.datetime
+if ecmwf_run_datetime.tzinfo is None:
+    ecmwf_run_datetime = ecmwf_run_datetime.replace(tzinfo=dt.timezone.utc)
+
+# Calcolo dinamico del lead time per arrivare esattamente alle 12:00 UTC del giorno successivo
+target_date = ecmwf_run_datetime.date() + dt.timedelta(days=1)
+valid_time = dt.datetime.combine(target_date, dt.time(12, 0), tzinfo=dt.timezone.utc)
+lead_hours = int((valid_time - ecmwf_run_datetime).total_seconds() / 3600)
+
+print("Run ECMWF utilizzato:", ecmwf_run_datetime)
+print(f"Validità fissata a: {valid_time.strftime('%Y-%m-%d %H:%M UTC')} (Lead time: +{lead_hours}h)")
+
+ECMWF_FILE = DATA_DIR / f"ecmwf_pl_{lead_hours}h.grib2"
+GFS_FILE = DATA_DIR / f"gfs_zero_{lead_hours}h.grib2"
+
 print("Richiedo ECMWF IFS (Livelli di pressione per calcolo zero termico)...")
-print(f"Lead time: +{LEAD_HOURS} h")
+print(f"Lead time: +{lead_hours} h")
 
 try:
     ecmwf_result = ecmwf_client.retrieve(
         type="fc",
-        step=LEAD_HOURS,
+        step=lead_hours,
         levtype="pl",
         levelist=[1000, 925, 850, 700, 600, 500],
         param=["t", "gh"],
@@ -89,14 +115,6 @@ except Exception as e:
 if not controlla_file(ECMWF_FILE):
     print("Il file ECMWF non è stato creato correttamente.")
     sys.exit(1)
-
-ecmwf_run_datetime = ecmwf_result.datetime
-if ecmwf_run_datetime.tzinfo is None:
-    ecmwf_run_datetime = ecmwf_run_datetime.replace(tzinfo=dt.timezone.utc)
-
-valid_time = ecmwf_run_datetime + dt.timedelta(hours=LEAD_HOURS)
-print("Run ECMWF:", ecmwf_run_datetime)
-print("Validità reale:", valid_time.strftime("%Y-%m-%d %H:%M UTC"))
 
 # ============================================================
 # 2. INDIVIDUAZIONE E DOWNLOAD RUN GFS COMPATIBILE
@@ -176,12 +194,11 @@ except Exception as e:
 
 messaggio("CALCOLO ZERO TERMICO DA PROFILI VERTICALI ECMWF")
 
-ds_ecmwf = xr.open_dataset(ECMWFFILE if 'ECMWFFILE' in locals() else ECMWF_FILE, engine="cfgrib")
+ds_ecmwf = xr.open_dataset(ECMWF_FILE, engine="cfgrib")
 
 t_pl = ds_ecmwf["t"]
 gh_pl = ds_ecmwf["gh"]
 
-# Identificazione nome coordinata pressione e coordinate spaziali
 press_coord = next((c for c in t_pl.dims if c in ["isobaricInhPa", "lev", "level", "pressure"]), None)
 lat_e = next((n for n in ["latitude", "lat"] if n in ds_ecmwf.coords), None)
 lon_e = next((n for n in ["longitude", "lon"] if n in ds_ecmwf.coords), None)
@@ -196,17 +213,14 @@ def normalizza_longitudine(da):
 t_pl = normalizza_longitudine(t_pl)
 gh_pl = normalizza_longitudine(gh_pl)
 
-# Taglio area Italia
 t_pl = t_pl.sel(lat=slice(LAT_MAX, LAT_MIN), lon=slice(LON_MIN, LON_MAX))
 gh_pl = gh_pl.sel(lat=slice(LAT_MAX, LAT_MIN), lon=slice(LON_MIN, LON_MAX))
 
-# Ordinamento pressione decrescente (superficie -> quota)
 t_pl = t_pl.sortby(press_coord, ascending=False)
 gh_pl = gh_pl.sortby(press_coord, ascending=False)
 
-# Algoritmo di estrazione zero termico (altezza dove T = 273.15 K)
-t_vals = t_pl.values  # (lev, lat, lon)
-gh_vals = gh_pl.values # (lev, lat, lon)
+t_vals = t_pl.values
+gh_vals = gh_pl.values
 target = 273.15
 n_lev, n_lat, n_lon = t_vals.shape
 zero_height = np.full((n_lat, n_lon), np.nan)
@@ -254,7 +268,6 @@ z_gfs = z_gfs.rename({lat_g: "lat", lon_g: "lon"})
 z_gfs = normalizza_longitudine(z_gfs)
 z_gfs = z_gfs.sel(lat=slice(LAT_MAX, LAT_MIN), lon=slice(LON_MIN, LON_MAX))
 
-# Interpolazione GFS su griglia ECMWF e calcolo media
 z_gfs_interp = z_gfs.interp(lat=z_ecmwf["lat"], lon=z_ecmwf["lon"], method="linear")
 z_media = (z_ecmwf + z_gfs_interp) / 2.0
 z_media.name = "zero_termico_media"
@@ -262,7 +275,6 @@ z_media.attrs["units"] = "m"
 
 z_diff = z_ecmwf - z_gfs_interp
 
-# Statistiche a terminale
 print()
 print("STATISTICHE ZERO TERMICO")
 print("-" * 50)
@@ -295,7 +307,7 @@ contour_fill = ax.contourf(
 )
 
 cbar = plt.colorbar(contour_fill, orientation="horizontal", pad=0.04, shrink=0.75)
-cbar.set_label("Quota Zero Termico (metri s.l.m.) - Previsione +24h", fontsize=10, fontweight="bold")
+cbar.set_label(f"Quota Zero Termico (metri s.l.m.) - Previsione +{lead_hours}h", fontsize=10, fontweight="bold")
 cbar.ax.tick_params(labelsize=9)
 
 contours = ax.contour(
@@ -305,8 +317,9 @@ contours = ax.contour(
 )
 ax.clabel(contours, inline=True, fontsize=9, fmt="%d m")
 
-ax.coastlines(resolution="10m", linewidth=1.1, color="darkslategray")
-ax.add_feature(cfeature.BORDERS, linestyle=":", linewidth=0.8, alpha=0.7)
+# Coste e confini in rosso per massima visibilità
+ax.coastlines(resolution="10m", linewidth=1.2, color="red")
+ax.add_feature(cfeature.BORDERS, linestyle=":", linewidth=1.0, edgecolor="red", alpha=0.8)
 ax.add_feature(cfeature.LAKES, alpha=0.25)
 
 gl = ax.gridlines(draw_labels=True, linestyle="--", linewidth=0.5, alpha=0.25)
@@ -314,8 +327,9 @@ gl.top_labels = False
 gl.right_labels = False
 
 plt.title(
-    "McSPARK METEO – Quota Zero Termico Italia (+24h)\n"
-    f"Media multimodello ECMWF + GFS | Validità: {valid_text}",
+    "McSPARK METEO – Quota Zero Termico Italia\n"
+    f"Media multimodello ECMWF + GFS | +{lead_hours} ore (ore 12:00 UTC)\n"
+    f"Validità: {valid_text}",
     fontsize=14, fontweight="bold", pad=15
 )
 
@@ -325,7 +339,7 @@ fig.text(
     ha="center", fontsize=9
 )
 
-TEMP_FILE = DATA_DIR / "zero_termico_italia_temp.png"
+TEMP_FILE = DATA_DIR / "zero_termico_italia_temp_12utc.png"
 plt.savefig(TEMP_FILE, dpi=300, bbox_inches="tight", pad_inches=0.3, facecolor="white")
 plt.close()
 
@@ -349,7 +363,7 @@ try:
 except FileNotFoundError:
     TEMP_FILE.rename(OUTPUT_FILE)
 
-NETCDF_FILE = DATA_DIR / "media_ECMWF_GFS_ZeroTermico_+24h.nc"
+NETCDF_FILE = DATA_DIR / f"media_ECMWF_GFS_ZeroTermico_+{lead_hours}h.nc"
 z_media.to_dataset(name="zero_termico").to_netcdf(NETCDF_FILE, engine="netcdf4")
 
 messaggio("OPERAZIONE COMPLETATA")
