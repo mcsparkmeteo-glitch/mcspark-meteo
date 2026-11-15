@@ -1,7 +1,7 @@
 # ============================================================
 # McSPARK METEO - FOCUS ITALIA
 # MEDIA MULTIMODELLO ECMWF + GFS
-# Copertura Nuvolosa Totale (Total Cloud Cover) - Previsione +24h
+# Copertura Nuvolosa Totale (Total Cloud Cover) - Target fisso ore 12:00 UTC
 # ============================================================
 
 import os
@@ -26,8 +26,6 @@ matplotlib.use('Agg')  # Forza il salvataggio senza interfaccia grafica
 # CONFIGURAZIONE (AREA ITALIA)
 # ============================================================
 
-LEAD_HOURS = 24
-
 # Focalizzazione sull'area italiana
 LON_MIN = 6.0
 LON_MAX = 19.0
@@ -43,10 +41,7 @@ DATA_DIR.mkdir(exist_ok=True)
 LOGO_FILE = BASE_DIR / "logo.jpg"
 MAX_GFS_ATTEMPTS = 8
 
-# File di output e temporanei
-OUTPUT_FILE = BASE_DIR / "copertura_nuvolosa_italia_24h.png"
-ECMWF_FILE = DATA_DIR / "ecmwf_tcc_24h.grib2"
-GFS_FILE = DATA_DIR / "gfs_tcdc_24h.grib2"
+OUTPUT_FILE = BASE_DIR / "copertura_nuvolosa_italia_12utc.png"
 
 def messaggio(testo):
     print()
@@ -58,7 +53,7 @@ def controlla_file(path):
     return path.exists() and path.stat().st_size >= 1000
 
 # ============================================================
-# 1. DATA/ORA UTC E DOWNLOAD ECMWF
+# 1. INDIVIDUAZIONE RUN ECMWF E CALCOLO LEAD TIME PER LE 12:00 UTC
 # ============================================================
 
 now_utc = dt.datetime.now(dt.timezone.utc)
@@ -70,32 +65,49 @@ ecmwf_client = Client(
     resol=ECMWF_RESOLUTION
 )
 
-print("Richiedo ECMWF IFS...")
-print("Parametro: Copertura nuvolosa totale (tcc)")
-print(f"Lead time: +{LEAD_HOURS} h")
+# Test preliminare a step 24 per ricavare la data/ora esatta del run disponibile
+TEMP_ECMWF_TEST = DATA_DIR / "ecmwf_test_tcc.grib2"
+try:
+    ecmwf_result_test = ecmwf_client.retrieve(
+        type="fc",
+        step=24,
+        param="tcc",
+        target=str(TEMP_ECMWF_TEST)
+    )
+except Exception as e:
+    print("ERRORE DURANTE IL DOWNLOAD ECMWF DI TEST:", e)
+    sys.exit(1)
 
+ecmwf_run_datetime = ecmwf_result_test.datetime
+if ecmwf_run_datetime.tzinfo is None:
+    ecmwf_run_datetime = ecmwf_run_datetime.replace(tzinfo=dt.timezone.utc)
+
+# Calcolo dinamico del lead time per arrivare esattamente alle 12:00 UTC del giorno successivo
+target_date = ecmwf_run_datetime.date() + dt.timedelta(days=1)
+valid_time = dt.datetime.combine(target_date, dt.time(12, 0), tzinfo=dt.timezone.utc)
+lead_hours = int((valid_time - ecmwf_run_datetime).total_seconds() / 3600)
+
+print("Run ECMWF utilizzato:", ecmwf_run_datetime)
+print(f"Validità fissata a: {valid_time.strftime('%Y-%m-%d %H:%M UTC')} (Lead time: +{lead_hours}h)")
+
+ECMWF_FILE = DATA_DIR / f"ecmwf_tcc_{lead_hours}h.grib2"
+GFS_FILE = DATA_DIR / f"gfs_tcdc_{lead_hours}h.grib2"
+
+# Download definitivo con il lead time corretto
 try:
     ecmwf_result = ecmwf_client.retrieve(
         type="fc",
-        step=LEAD_HOURS,
+        step=lead_hours,
         param="tcc",
         target=str(ECMWF_FILE)
     )
 except Exception as e:
-    print("ERRORE DURANTE IL DOWNLOAD ECMWF:", e)
+    print("ERRORE DURANTE IL DOWNLOAD ECMWF DEFINITIVO:", e)
     sys.exit(1)
 
 if not controlla_file(ECMWF_FILE):
     print("Il file ECMWF non è stato creato correttamente.")
     sys.exit(1)
-
-ecmwf_run_datetime = ecmwf_result.datetime
-if ecmwf_run_datetime.tzinfo is None:
-    ecmwf_run_datetime = ecmwf_run_datetime.replace(tzinfo=dt.timezone.utc)
-
-valid_time = ecmwf_run_datetime + dt.timedelta(hours=LEAD_HOURS)
-print("Run ECMWF:", ecmwf_run_datetime)
-print("Validità reale:", valid_time.strftime("%Y-%m-%d %H:%M UTC"))
 
 # ============================================================
 # 2. INDIVIDUAZIONE E DOWNLOAD RUN GFS COMPATIBILE
@@ -179,7 +191,6 @@ ds_ecmwf = xr.open_dataset(ECMWF_FILE, engine="cfgrib")
 tcc_e_var = next((v for v in ["tcc", "TCC"] if v in ds_ecmwf), None)
 cloud_ecmwf = ds_ecmwf[tcc_e_var]
 
-# Lettura GFS filtrando lo stepType per evitare conflitti
 ds_gfs = xr.open_dataset(
     GFS_FILE,
     engine="cfgrib",
@@ -188,7 +199,6 @@ ds_gfs = xr.open_dataset(
 tcc_g_var = next((v for v in ["tcdc", "TCDC", "tcc"] if v in ds_gfs), None)
 cloud_gfs = ds_gfs[tcc_g_var]
 
-# Normalizzazione coordinate
 def trova_coord(ds, possibili):
     return next((n for n in possibili if n in ds.coords), None)
 
@@ -205,11 +215,9 @@ def normalizza_longitudine(da):
 cloud_ecmwf = normalizza_longitudine(cloud_ecmwf)
 cloud_gfs = normalizza_longitudine(cloud_gfs)
 
-# Taglio area Italia
 cloud_ecmwf = cloud_ecmwf.sel(lat=slice(LAT_MAX, LAT_MIN), lon=slice(LON_MIN, LON_MAX))
 cloud_gfs = cloud_gfs.sel(lat=slice(LAT_MAX, LAT_MIN), lon=slice(LON_MIN, LON_MAX))
 
-# Standardizzazione in percentuale (0-100%)
 if float(cloud_ecmwf.max()) <= 1.1:
     cloud_ecmwf = cloud_ecmwf * 100.0
 if float(cloud_gfs.max()) <= 1.1:
@@ -218,16 +226,14 @@ if float(cloud_gfs.max()) <= 1.1:
 cloud_ecmwf.name = "cloud_ecmwf"
 cloud_gfs.name = "cloud_gfs"
 
-# Interpolazione GFS su griglia ECMWF e calcolo media multimodello
 cloud_gfs_interp = cloud_gfs.interp(lat=cloud_ecmwf["lat"], lon=cloud_ecmwf["lon"], method="linear")
 cloud_media = (cloud_ecmwf + cloud_gfs_interp) / 2.0
-cloud_media = cloud_media.clip(0, 100)  # CORRETTO QUI
+cloud_media = cloud_media.clip(0, 100)
 cloud_media.name = "copertura_nuvolosa_media"
 cloud_media.attrs["units"] = "%"
 
 cloud_diff = cloud_ecmwf - cloud_gfs_interp
 
-# Statistiche a terminale
 print()
 print("STATISTICHE COPERTURA NUVOLOSA")
 print("-" * 50)
@@ -251,14 +257,15 @@ ax.set_extent([LON_MIN, LON_MAX, LAT_MIN, LAT_MAX], crs=ccrs.PlateCarree())
 
 levels = np.arange(0, 105, 10)
 
+# MODIFICA: "Greys" standard (0% = bianco/sereno, 100% = grigio scuro/nuvoloso)
 contour_fill = ax.contourf(
     cloud_media["lon"], cloud_media["lat"], cloud_media,
-    levels=levels, cmap="Blues", alpha=0.85,
+    levels=levels, cmap="Greys", alpha=0.85,
     extend="neither", transform=ccrs.PlateCarree()
 )
 
 cbar = plt.colorbar(contour_fill, orientation="horizontal", pad=0.04, shrink=0.75)
-cbar.set_label("Copertura Nuvolosa Totale (%) - Previsione +24h", fontsize=10, fontweight="bold")
+cbar.set_label(f"Copertura Nuvolosa Totale (%) - Previsione +{lead_hours}h", fontsize=10, fontweight="bold")
 cbar.ax.tick_params(labelsize=9)
 
 contours = ax.contour(
@@ -268,8 +275,9 @@ contours = ax.contour(
 )
 ax.clabel(contours, inline=True, fontsize=8, fmt="%d%%")
 
-ax.coastlines(resolution="10m", linewidth=1.1, color="darkslategray")
-ax.add_feature(cfeature.BORDERS, linestyle=":", linewidth=0.8, alpha=0.7)
+# Sostituisci le righe delle coste e dei confini con queste:
+ax.coastlines(resolution="10m", linewidth=1.2, color="red")
+ax.add_feature(cfeature.BORDERS, linestyle=":", linewidth=1.0, edgecolor="red", alpha=0.8)
 ax.add_feature(cfeature.LAKES, alpha=0.25)
 
 gl = ax.gridlines(draw_labels=True, linestyle="--", linewidth=0.5, alpha=0.25)
@@ -277,8 +285,9 @@ gl.top_labels = False
 gl.right_labels = False
 
 plt.title(
-    "McSPARK METEO – Copertura Nuvolosa Totale Italia (+24h)\n"
-    f"Media multimodello ECMWF + GFS | Validità: {valid_text}",
+    "McSPARK METEO – Copertura Nuvolosa Totale Italia\n"
+    f"Media multimodello ECMWF + GFS | +{lead_hours} ore (ore 12:00 UTC)\n"
+    f"Validità: {valid_text}",
     fontsize=14, fontweight="bold", pad=15
 )
 
@@ -288,7 +297,7 @@ fig.text(
     ha="center", fontsize=9
 )
 
-TEMP_FILE = DATA_DIR / "copertura_nuvolosa_italia_temp.png"
+TEMP_FILE = DATA_DIR / "copertura_nuvolosa_italia_temp_12utc.png"
 plt.savefig(TEMP_FILE, dpi=300, bbox_inches="tight", pad_inches=0.3, facecolor="white")
 plt.close()
 
@@ -312,7 +321,7 @@ try:
 except FileNotFoundError:
     TEMP_FILE.rename(OUTPUT_FILE)
 
-NETCDF_FILE = DATA_DIR / "media_ECMWF_GFS_Nuvolosita_+24h.nc"
+NETCDF_FILE = DATA_DIR / f"media_ECMWF_GFS_Nuvolosita_+{lead_hours}h.nc"
 cloud_media.to_dataset(name="copertura_nuvolosa").to_netcdf(NETCDF_FILE, engine="netcdf4")
 
 messaggio("OPERAZIONE COMPLETATA")
