@@ -2,7 +2,7 @@
 # McSPARK METEO
 #
 # MEDIA MULTIMODELLO ECMWF + GFS
-# Temperatura a 850 hPa (Area Euro-Atlantica) - Previsione +24h
+# Temperatura a 850 hPa (Area Euro-Atlantica) - Previsione +36h (ore 12:00)
 #
 # ECMWF IFS Open Data
 # GFS NOAA/NCEP
@@ -38,7 +38,7 @@ matplotlib.use('Agg')  # Forza il salvataggio senza interfaccia grafica
 # CONFIGURAZIONE (AREA EURO-ATLANTICA)
 # ============================================================
 
-LEAD_HOURS = 24
+LEAD_HOURS = 36  # Impostato a 36 ore per arrivare alle 12:00 UTC del giorno successivo
 PRESSURE_LEVEL = 850
 
 # Nuova estensione geografica (stile WXcharts)
@@ -59,9 +59,9 @@ DATA_DIR.mkdir(exist_ok=True)
 # Logo
 LOGO_FILE = BASE_DIR / "logo.jpg"
 
-# File temporanei aggiornati a 24h
-ECMWF_FILE = DATA_DIR / "ecmwf_t850_24h.grib2"
-GFS_FILE = DATA_DIR / "gfs_t850_24h.grib2"
+# File temporanei aggiornati a 36h
+ECMWF_FILE = DATA_DIR / "ecmwf_t850_36h.grib2"
+GFS_FILE = DATA_DIR / "gfs_t850_36h.grib2"
 
 # Output
 OUTPUT_FILE = (
@@ -105,7 +105,7 @@ now_utc = dt.datetime.now(dt.timezone.utc)
 
 print()
 print("McSPARK METEO")
-print("Media multimodello ECMWF + GFS (Euro-Atlantico - +24h)")
+print(f"Media multimodello ECMWF + GFS (Euro-Atlantico - +{LEAD_HOURS}h)")
 print("Temperatura a 850 hPa")
 print()
 print(
@@ -118,7 +118,7 @@ print(
 # 2. DOWNLOAD ECMWF
 # ============================================================
 
-messaggio("RICERCA RUN ECMWF PIÙ RECENTE (+24h)")
+messaggio(f"RICERCA RUN ECMWF PIÙ RECENTE (+{LEAD_HOURS}h)")
 
 ecmwf_client = Client(
     source="ecmwf",
@@ -451,7 +451,7 @@ gl.right_labels = False
 
 plt.title(
     "McSPARK METEO – Temperatura a 850 hPa (Euro-Atlantico)\n"
-    f"Media multimodello ECMWF + GFS | +{LEAD_HOURS} ore (+1 giorno)\n"
+    f"Media multimodello ECMWF + GFS | +{LEAD_HOURS} ore (ore 12:00 UTC)\n"
     f"Validità: {valid_time_text}",
     fontsize=14,
     fontweight="bold",
