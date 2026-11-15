@@ -386,6 +386,7 @@ def genera_mappa_completa(day_index: int, nome_file: str):
             lon_float = float(p["lon"])
 
             base_t7 = base_t14 = base_t22 = 0.0
+            dp7_m = dp14_m = dp22_m = 0.0
             base_pm10 = 15.0
             base_uv = 0.0
             dir_testo = "N/D"
