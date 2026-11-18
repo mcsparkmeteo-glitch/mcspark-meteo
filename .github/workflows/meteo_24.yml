@@ -18,6 +18,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Sincronizza repository iniziale
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull origin main --rebase || true
+
       - name: Configura Python
         uses: actions/setup-python@v5
         with:
@@ -79,10 +85,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Sincronizza prima di aggiungere, risolvendo eventuali conflitti a favore del nuovo
-          git pull origin main --rebase -X theirs || true
-          
           git add .
           git diff --cached --quiet && echo "Nessuna modifica da pushare" && exit 0
           git commit -m "☁️ Aggiornamento automatico meteo [skip ci]"
-          git push
+          git push origin main
