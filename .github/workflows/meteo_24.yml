@@ -35,7 +35,7 @@ jobs:
           pip install numpy xarray scipy netcdf4 cfgrib matplotlib cartopy requests ecmwf-opendata Pillow
 
       - name: Esegui script Precipitazioni 24h
-        run: python precipitazioni_24.py
+        run: python precipitazioni_24h_gif.py
         env:
           CI: "true"
 
